@@ -47,14 +47,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& GA) {
   using W = typename Graph::weight_type;
   size_t n = GA.n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return GA.get_vertex(i).out_degree(); });
+      n, [&](size_t i) { //return GA.get_vertex(i).out_degree();
+      return floor(pow(1.01, floor(log(GA.get_vertex(i).out_degree()/log(1.01)))));
+  });
 
   while (--T >= 0) {
-
-    for (int i = 0 ; i < 10 ; ++ i) {
-      std::cout << "i = " << i << ": " << D[i] << std::endl;
-    }
-    auto degeneracy_order = DegeneracyOrderWithLoad(GA, D);
+    auto degeneracy_order = DegeneracyOrderWithLoad(GA, D, 16);
     auto vtx_to_position = sequence<uintE>(n);
 
     parallel_for(0, n, [&](size_t i) {
@@ -93,11 +91,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& GA) {
       return static_cast<double>(dens) / static_cast<double>(rem);
     });
     max_density = std::max(max_density,parlay::reduce_max(density_seq));
-    std::cout << "### Density of 2-Densest Subgraph is: " << max_density
+    std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2
               << std::endl;
-    
+
     std::cout << "### " << T << " remaining rounds" << std::endl;
-    
+
   }
   return max_density;
 }

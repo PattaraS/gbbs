@@ -230,8 +230,12 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
         -> const std::optional<std::tuple<uintE, uintE> > {
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
           uintE deg = D[v];
-          if (deg > k) {
-            uintE new_deg = std::max(deg - edgesRemoved, k);
+          if (deg > k && deg > edgesRemoved) {
+            uintE new_deg =
+                std::max(k,
+                        (uintE) floor(pow(1.01,floor(log(deg - edgesRemoved)/log(1.01)))));
+                        //deg-edgesRemoved);
+            uintE original = std::max(deg - edgesRemoved, k);
             D[v] = new_deg;
             return wrap(v, b.get_bucket(new_deg));
           }
