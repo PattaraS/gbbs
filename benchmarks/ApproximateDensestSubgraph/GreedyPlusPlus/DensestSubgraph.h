@@ -31,7 +31,7 @@ namespace gbbs {
 // Implements a parallel version of Charikar's 2-appx that runs in O(m+n)
 // expected work and O(\rho\log n) depth w.h.p.
 template <class Graph>
-double GreedyPlusPlusDensestSubgraph(Graph& GA) {
+double GreedyPlusPlusDensestSubgraph(Graph& GA, size_t seed = 0) {
   // deg_ord = degeneracy_order(GA)
   // ## Now, density check for graph after removing each vertex, in the
   // peeling-order.
@@ -48,11 +48,13 @@ double GreedyPlusPlusDensestSubgraph(Graph& GA) {
   size_t n = GA.n;
   auto D = sequence<uintE>::from_function(
       n, [&](size_t i) { //return GA.get_vertex(i).out_degree();
-      return floor(pow(1.01, floor(log(GA.get_vertex(i).out_degree()/log(1.01)))));
+      return floor(pow(1.05, floor(log(GA.get_vertex(i).out_degree()/log(1.05)))));
   });
 
+  auto rnd = parlay::random(seed);
+
   while (--T >= 0) {
-    auto degeneracy_order = DegeneracyOrderWithLoad(GA, D, 16);
+    auto degeneracy_order = DegeneracyOrderWithLoad(GA, D, 16, rnd);
     auto vtx_to_position = sequence<uintE>(n);
 
     parallel_for(0, n, [&](size_t i) {

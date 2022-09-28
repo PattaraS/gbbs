@@ -39,18 +39,20 @@ namespace {
 template <class Graph>
 double DensestSubgraph_runner(Graph& G, commandLine P) {
   double eps = P.getOptionDoubleValue("-eps", 0.001);
+  size_t seed = P.getOptionIntValue("-seed", 1);
   std::cout << "### Application: DensestSubgraph" << std::endl;
   std::cout << "### Graph: " << P.getArgument(0) << std::endl;
   std::cout << "### Threads: " << num_workers() << std::endl;
   std::cout << "### n: " << G.n << std::endl;
   std::cout << "### m: " << G.m << std::endl;
   std::cout << "### Params: -eps = " << eps << std::endl;
+  std::cout << "### Params: -seed = " << seed << std::endl;
   std::cout << "### ------------------------------------" << std::endl;
   assert(P.getOption("-s"));
 
   timer t;
   t.start();
-  GreedyPlusPlusDensestSubgraph(G);
+  GreedyPlusPlusDensestSubgraph(G, seed);
   double tt = t.stop();
 
   std::cout << "### Running Time: " << tt << std::endl;

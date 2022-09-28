@@ -26,6 +26,7 @@
 #include "gbbs/gbbs.h"
 #include "gbbs/julienne.h"
 
+
 namespace gbbs {
 
 template <class Graph>
@@ -200,7 +201,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
 }
 
 template <class Graph>
-inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,size_t num_buckets = 16) {
+inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,size_t num_buckets = 16, parlay::random& rnd =parlay::random()) {
   const size_t n = G.n;
   // auto D = sequence<uintE>::from_function(
   //     n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
@@ -224,7 +225,17 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
 
     auto active_seq = parlay::delayed_seq<uintE>(
         active.size(), [&](size_t i) { return active.s[i]; });
-    degeneracy_order.copyIn(active_seq, active.size());
+
+    //auto shifting = rand() % active.size();;
+    //auto active_rotate = parlay::rotate(active_seq, shifting);
+    auto active_shuffle = parlay::random_shuffle(active_seq, rnd);
+
+    //degeneracy_order.copyIn(active_seq, active.size());
+    std::cout << "active size() = " << active.size() << std::endl;
+    std::cout << "active_shuffle size() = " << active_shuffle.size() << std::endl;
+    degeneracy_order.copyIn(active_shuffle, active_shuffle.size());
+
+    //degeneracy_order.copyIn(active_rotate, active.size());
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
         -> const std::optional<std::tuple<uintE, uintE> > {
@@ -233,7 +244,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
           if (deg > k && deg > edgesRemoved) {
             uintE new_deg =
                 std::max(k,
-                        (uintE) floor(pow(1.01,floor(log(deg - edgesRemoved)/log(1.01)))));
+                        (uintE) floor(pow(1.05,floor(log(deg - edgesRemoved)/log(1.05)))));
                         //deg-edgesRemoved);
             uintE original = std::max(deg - edgesRemoved, k);
             D[v] = new_deg;

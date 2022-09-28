@@ -34,6 +34,7 @@
 //     -nb : the number of buckets to use in the bucketing implementation
 
 #include "KCore.h"
+#include "gbbs/semiasym/graph_filter.h"
 
 namespace gbbs {
 template <class Graph>
@@ -59,6 +60,30 @@ double KCore_runner(Graph& G, commandLine P) {
   timer t;
   t.start();
   auto cores = (fa) ? KCore_FA(G, num_buckets) : KCore(G, num_buckets);
+  auto max_core = parlay::reduce_max(cores);
+  using W = gbbs::empty;
+  auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+      return (cores[u] >= max_core/2 ) && (cores[v] >= max_core/2);
+  };
+  auto PG = sage::filter_graph(G, predicate);
+  std::cout << "### SubGraph core: " << max_core/2 << std::endl;
+  std::cout << "### n: " << PG.n << std::endl;
+  std::cout << "### m: " << PG.m << std::endl;
+  for (size_t u = 0 ; u < PG.n ; ++u) {
+    if (PG.get_vertex(u).out_degree()) {
+        auto edges = parlay::sequence<std::pair<uintE, uintE>>(PG.get_vertex(u).out_degree());
+        size_t k = 0;
+        auto map_f = [&](const uintE& u, const uintE& v, const W& wgh) {
+                edges[k++] = std::make_pair(u, v);
+        };
+
+        PG.get_vertex(u).out_neighbors().map(map_f, false);
+        for (size_t i = 0; i < edges.size(); i++) {
+                std::cout << edges[i].first << " " << edges[i].second << std::endl;
+        }
+    }
+  }
+
   double tt = t.stop();
 
   std::cout << "### Running Time: " << tt << std::endl;
