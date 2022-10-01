@@ -228,12 +228,16 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
 
     //auto shifting = rand() % active.size();;
     //auto active_rotate = parlay::rotate(active_seq, shifting);
-    auto active_shuffle = parlay::random_shuffle(active_seq, rnd);
+    //auto active_shuffle = parlay::random_shuffle(active_seq, rnd);
+    //rnd = rnd.next();
 
-    //degeneracy_order.copyIn(active_seq, active.size());
-    std::cout << "active size() = " << active.size() << std::endl;
-    std::cout << "active_shuffle size() = " << active_shuffle.size() << std::endl;
-    degeneracy_order.copyIn(active_shuffle, active_shuffle.size());
+    /*for (size_t i = 0; i < active_shuffle.size(); i++) {
+        std::cout << "Bucket element: " << active_shuffle[i] << std::endl;
+    }*/
+    degeneracy_order.copyIn(active_seq, active.size());
+    //std::cout << "active size() = " << active.size() << std::endl;
+    //std::cout << "active_shuffle size() = " << active_shuffle.size() << std::endl;
+    //degeneracy_order.copyIn(active_shuffle, active_shuffle.size());
 
     //degeneracy_order.copyIn(active_rotate, active.size());
 
@@ -242,10 +246,11 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
           uintE deg = D[v];
           if (deg > k && deg > edgesRemoved) {
+            // store actual degree for densest subgraph # and peeling degree
             uintE new_deg =
                 std::max(k,
-                        (uintE) floor(pow(1.05,floor(log(deg - edgesRemoved)/log(1.05)))));
-                        //deg-edgesRemoved);
+                        //(uintE) floor(pow(1.05,floor(log(deg - edgesRemoved)/log(1.05)))));
+                        deg-edgesRemoved);
             uintE original = std::max(deg - edgesRemoved, k);
             D[v] = new_deg;
             return wrap(v, b.get_bucket(new_deg));

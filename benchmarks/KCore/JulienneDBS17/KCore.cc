@@ -35,20 +35,23 @@
 
 #include "KCore.h"
 #include "gbbs/semiasym/graph_filter.h"
+#include "gbbs/vertex.h"
+#include "gbbs/bridge.h"
+#include "gbbs/graph_mutation.h"
 
 namespace gbbs {
 template <class Graph>
 double KCore_runner(Graph& G, commandLine P) {
   size_t num_buckets = P.getOptionLongValue("-nb", 16);
   bool fa = P.getOption("-fa");
-  std::cout << "### Application: KCore" << std::endl;
+  /*std::cout << "### Application: KCore" << std::endl;
   std::cout << "### Graph: " << P.getArgument(0) << std::endl;
   std::cout << "### Threads: " << num_workers() << std::endl;
   std::cout << "### n: " << G.n << std::endl;
   std::cout << "### m: " << G.m << std::endl;
   std::cout << "### Params: -nb (num_buckets) = " << num_buckets
             << " -fa (use fetch_and_add) = " << fa << std::endl;
-  std::cout << "### ------------------------------------" << std::endl;
+  std::cout << "### ------------------------------------" << std::endl;*/
   if (num_buckets != static_cast<size_t>((1 << parlay::log2_up(num_buckets)))) {
     std::cout << "Number of buckets must be a power of two."
               << "\n";
@@ -63,30 +66,37 @@ double KCore_runner(Graph& G, commandLine P) {
   auto max_core = parlay::reduce_max(cores);
   using W = gbbs::empty;
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-      return (cores[u] >= max_core/2 ) && (cores[v] >= max_core/2);
+      return (cores[u] >= 0) && (cores[v] >= 0);
   };
   auto PG = sage::filter_graph(G, predicate);
   std::cout << "### SubGraph core: " << max_core/2 << std::endl;
   std::cout << "### n: " << PG.n << std::endl;
+  std::cout << "### old m: " << G.m << std::endl;
   std::cout << "### m: " << PG.m << std::endl;
-  for (size_t u = 0 ; u < PG.n ; ++u) {
-    if (PG.get_vertex(u).out_degree()) {
-        auto edges = parlay::sequence<std::pair<uintE, uintE>>(PG.get_vertex(u).out_degree());
-        size_t k = 0;
-        auto map_f = [&](const uintE& u, const uintE& v, const W& wgh) {
-                edges[k++] = std::make_pair(u, v);
+  auto out_deg = 0;
+  auto mapped_deg = 0;
+  for (size_t cur_vert = 0 ; cur_vert < PG.n ; cur_vert++) {
+    if (PG.get_vertex(cur_vert).out_degree() > 0) {
+        auto edges = parlay::sequence<std::pair<uintE, uintE>>(PG.get_vertex(cur_vert).out_degree());
+        out_deg += edges.size();
+        auto map_f = [&](const uintE& u, const uintE& v, const W& wgh, const uintE& nghind) {
+            edges[nghind] = std::make_pair(u, v);
         };
+        PG.get_vertex(cur_vert).out_neighbors().map_with_index(map_f, false);
 
-        PG.get_vertex(u).out_neighbors().map(map_f, false);
-        for (size_t i = 0; i < edges.size(); i++) {
-                std::cout << edges[i].first << " " << edges[i].second << std::endl;
+        for (size_t idx = 0; idx < edges.size(); idx++) {
+            if (edges[idx].first == 0 && edges[idx].second == 0)
+                std::cout << "WRONG" << std::endl;
+            //std::cout << edges[idx].first << " " << edges[idx].second << std::endl;
         }
     }
   }
+  std::cout << "### Computed outdeg: " << out_deg << std::endl;
+  std::cout << "### Mapped outdeg: " << out_deg << std::endl;
 
   double tt = t.stop();
 
-  std::cout << "### Running Time: " << tt << std::endl;
+  //std::cout << "### Running Time: " << tt << std::endl;
 
   return tt;
 }
