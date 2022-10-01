@@ -34,7 +34,7 @@
 //     -nb : the number of buckets to use in the bucketing implementation
 
 #include "KCore.h"
-#include "gbbs/semiasym/graph_filter.h"
+#include "gbbs/gbbs.h"
 #include "gbbs/vertex.h"
 #include "gbbs/bridge.h"
 #include "gbbs/graph_mutation.h"
@@ -68,7 +68,7 @@ double KCore_runner(Graph& G, commandLine P) {
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= 0) && (cores[v] >= 0);
   };
-  auto PG = sage::filter_graph(G, predicate);
+  auto PG = filterGraph(G, predicate);
   std::cout << "### SubGraph core: " << max_core/2 << std::endl;
   std::cout << "### n: " << PG.n << std::endl;
   std::cout << "### old m: " << G.m << std::endl;
