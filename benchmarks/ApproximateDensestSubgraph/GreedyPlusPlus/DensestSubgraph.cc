@@ -40,6 +40,7 @@ template <class Graph>
 double DensestSubgraph_runner(Graph& G, commandLine P) {
   double eps = P.getOptionDoubleValue("-eps", 0.001);
   size_t seed = P.getOptionIntValue("-seed", 1);
+  size_t iter = P.getOptionIntValue("-iter", 5);
   std::cout << "### Application: DensestSubgraph" << std::endl;
   std::cout << "### Graph: " << P.getArgument(0) << std::endl;
   std::cout << "### Threads: " << num_workers() << std::endl;
@@ -47,12 +48,14 @@ double DensestSubgraph_runner(Graph& G, commandLine P) {
   std::cout << "### m: " << G.m << std::endl;
   std::cout << "### Params: -eps = " << eps << std::endl;
   std::cout << "### Params: -seed = " << seed << std::endl;
+  std::cout << "### Params: -iter = " << iter << std::endl;
   std::cout << "### ------------------------------------" << std::endl;
   assert(P.getOption("-s"));
 
   timer t;
   t.start();
-  GreedyPlusPlusDensestSubgraph(G, seed);
+
+  GreedyPlusPlusDensestSubgraph(G, seed, iter);
   double tt = t.stop();
 
   std::cout << "### Running Time: " << tt << std::endl;
@@ -62,4 +65,4 @@ double DensestSubgraph_runner(Graph& G, commandLine P) {
 }  // namespace
 }  // namespace gbbs
 
-generate_main(gbbs::DensestSubgraph_runner, false);
+generate_symmetric_main(gbbs::DensestSubgraph_runner, false);

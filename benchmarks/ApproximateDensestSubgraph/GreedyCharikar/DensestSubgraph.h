@@ -66,11 +66,21 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
   auto density_rev =
       parlay::make_slice(density_above.rbegin(), density_above.rend());
   size_t total_edges = parlay::scan_inplace(density_rev);
+  auto new_density_above = sequence<size_t>(density_above.size());
+  new_density_above[0] = GA.m;
+  parallel_for(0, density_above.size()-1, [&] (size_t i) {
+    new_density_above[i + 1] = density_above[i];
+  });
+  density_above = new_density_above;
+
   if (total_edges != GA.m) {
     std::cout << "Assert failed: total_edges should be " << GA.m
               << " but is: " << total_edges << std::endl;
     exit(0);
   }
+
+  if (density_above[0] != GA.m)
+      std::cout << density_above[0] << ", " << GA.m << std::endl;
 
   auto density_seq = parlay::delayed_seq<double>(n, [&](size_t i) {
     size_t dens = density_above[i];
@@ -78,7 +88,7 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
     return static_cast<double>(dens) / static_cast<double>(rem);
   });
   double max_density = parlay::reduce_max(density_seq);
-  std::cout << "### Density of 2-Densest Subgraph is: " << max_density
+  std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2.0
             << std::endl;
   return max_density;
 }

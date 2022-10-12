@@ -23,6 +23,10 @@
 
 #pragma once
 
+#include <set>
+#include <queue>
+#include <vector>
+
 #include "gbbs/gbbs.h"
 #include "gbbs/julienne.h"
 
@@ -75,6 +79,18 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
   debug(bt.next("bucket time"););
   return D;
 }
+
+/*template <class Graph>
+inline auto HalfKCoreSubgraph(Graph& G)
+  using W = typename Graph::weight_type;
+  auto cores = KCore(G, 16);
+  auto max_core = parlay::reduce_max(cores);
+  auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+      return (cores[u] >= max_core/2) && (cores[v] >= max_core/2);
+  };
+  auto GA = filterGraph(G, predicate);
+  return GA;
+}*/
 
 template <class W>
 struct kcore_fetch_add {
@@ -201,10 +217,53 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
 }
 
 template <class Graph>
+inline sequence<uintE> SeqDegeneracyOrderWithLoad(Graph& G, sequence<std::pair<uintE, uintE>> D) {
+    auto degeneracy_order = sequence<uintE>(D.size());
+    auto finished = 0;
+    using pi = std::pair<uintE, uintE>;
+    using W = typename Graph::weight_type;
+    std::priority_queue<pi, std::vector<pi>, std::greater<pi>> pq;
+    std::set<uintE> verts;
+
+    for (size_t i = 0; i < D.size(); i++) {
+        pq.push(std::make_pair(D[i].second, D[i].first));
+    }
+
+    while (finished < D.size()) {
+        auto vert_pair = pq.top();
+        pq.pop();
+
+        if (verts.find(vert_pair.second) == verts.end()) {
+            verts.insert(vert_pair.second);
+            degeneracy_order[finished] = vert_pair.second;
+            auto moved = sequence<std::pair<uintE, uintE>>(G.get_vertex(vert_pair.second).out_degree());
+            auto map_f = [&](const uintE& u, const uintE& v, const W& wgh, const uintE& nghind) {
+                if (verts.find(v) == verts.end()) {
+                    D[v].second -= 1;
+                }
+                moved[nghind] = std::make_pair(v, D[v].second);
+            };
+            G.get_vertex(vert_pair.second).out_neighbors().map_with_index(map_f, false);
+
+            for (int j = 0; j < moved.size(); j++) {
+                pq.push(std::make_pair(moved[j].second, moved[j].first));
+            }
+            finished++;
+        }
+    }
+
+    std::set<uintE> new_verts;
+
+    for (size_t i = 0; i < degeneracy_order.size(); i++) {
+        new_verts.insert(degeneracy_order[i]);
+    }
+
+    return degeneracy_order;
+}
+
+template <class Graph>
 inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,size_t num_buckets = 16, parlay::random& rnd =parlay::random()) {
   const size_t n = G.n;
-  // auto D = sequence<uintE>::from_function(
-  //     n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
 
   auto em = EdgeMap<uintE, Graph>(G, std::make_tuple(UINT_E_MAX, 0),
                                   (size_t)G.m / 50);
@@ -225,6 +284,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
 
     auto active_seq = parlay::delayed_seq<uintE>(
         active.size(), [&](size_t i) { return active.s[i]; });
+    degeneracy_order.copyIn(active_seq, active_seq.size());
 
     //auto shifting = rand() % active.size();;
     //auto active_rotate = parlay::rotate(active_seq, shifting);
@@ -234,7 +294,6 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
     /*for (size_t i = 0; i < active_shuffle.size(); i++) {
         std::cout << "Bucket element: " << active_shuffle[i] << std::endl;
     }*/
-    degeneracy_order.copyIn(active_seq, active.size());
     //std::cout << "active size() = " << active.size() << std::endl;
     //std::cout << "active_shuffle size() = " << active_shuffle.size() << std::endl;
     //degeneracy_order.copyIn(active_shuffle, active_shuffle.size());
@@ -245,7 +304,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
         -> const std::optional<std::tuple<uintE, uintE> > {
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
           uintE deg = D[v];
-          if (deg > k && deg > edgesRemoved) {
+          if (deg > k) {
             // store actual degree for densest subgraph # and peeling degree
             uintE new_deg =
                 std::max(k,
@@ -260,6 +319,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
 
     vertexSubsetData<uintE> moved =
         em.template edgeMapCount_sparse<uintE>(active, apply_f);
+
     bt.start();
     if (moved.dense()) {
       b.update_buckets(moved.get_fn_repr(), n);

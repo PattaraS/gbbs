@@ -66,7 +66,7 @@ double KCore_runner(Graph& G, commandLine P) {
   auto max_core = parlay::reduce_max(cores);
   using W = gbbs::empty;
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-      return (cores[u] >= 0) && (cores[v] >= 0);
+      return (cores[u] >= 56) && (cores[v] >= 56);
   };
   auto PG = filterGraph(G, predicate);
   std::cout << "### SubGraph core: " << max_core/2 << std::endl;
@@ -85,14 +85,11 @@ double KCore_runner(Graph& G, commandLine P) {
         PG.get_vertex(cur_vert).out_neighbors().map_with_index(map_f, false);
 
         for (size_t idx = 0; idx < edges.size(); idx++) {
-            if (edges[idx].first == 0 && edges[idx].second == 0)
-                std::cout << "WRONG" << std::endl;
-            //std::cout << edges[idx].first << " " << edges[idx].second << std::endl;
+            std::cout << edges[idx].first << " " << edges[idx].second << std::endl;
         }
     }
   }
   std::cout << "### Computed outdeg: " << out_deg << std::endl;
-  std::cout << "### Mapped outdeg: " << out_deg << std::endl;
 
   double tt = t.stop();
 

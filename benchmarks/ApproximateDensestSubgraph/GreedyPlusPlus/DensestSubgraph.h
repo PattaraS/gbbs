@@ -31,7 +31,7 @@ namespace gbbs {
 // Implements a parallel version of Charikar's 2-appx that runs in O(m+n)
 // expected work and O(\rho\log n) depth w.h.p.
 template <class Graph>
-double GreedyPlusPlusDensestSubgraph(Graph& GA, size_t seed = 0) {
+double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
   // deg_ord = degeneracy_order(GA)
   // ## Now, density check for graph after removing each vertex, in the
   // peeling-order.
@@ -42,18 +42,24 @@ double GreedyPlusPlusDensestSubgraph(Graph& GA, size_t seed = 0) {
   // density w/o vertex_i = S[i] / (n - i)
   // Compute the max over all v.
 
-  int T = 20;
   double max_density = 0.0;
   using W = typename Graph::weight_type;
+  auto cores = KCore(G, 16);
+  auto max_core = parlay::reduce_max(cores);
+  auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+      return (cores[u] >= max_core/2) && (cores[v] >= max_core/2);
+  };
+  auto GA = filterGraph(G, predicate);
+
   size_t n = GA.n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { //return GA.get_vertex(i).out_degree();
-      return floor(pow(1.05, floor(log(GA.get_vertex(i).out_degree()/log(1.05)))));
+      n, [&](size_t i) { return GA.get_vertex(i).out_degree();
+      //return floor(pow(1.05, floor(log(GA.get_vertex(i).out_degree()/log(1.05)))));
   });
 
   auto rnd = parlay::random(seed);
 
-  while (--T >= 0) {
+  while (--T > 0) {
     auto degeneracy_order = DegeneracyOrderWithLoad(GA, D, 16, rnd);
     auto vtx_to_position = sequence<uintE>(n);
 
@@ -86,6 +92,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& GA, size_t seed = 0) {
                 << " but is: " << total_edges << std::endl;
       exit(0);
     }
+    auto new_density_above = sequence<size_t>(density_above.size());
+    new_density_above[0] = GA.m;
+    parallel_for(0, density_above.size()-1, [&] (size_t i) {
+        new_density_above[i + 1] = density_above[i];
+    });
+    density_above = new_density_above;
 
     auto density_seq = parlay::delayed_seq<double>(n, [&](size_t i) {
       size_t dens = density_above[i];
