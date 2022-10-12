@@ -44,6 +44,7 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
 
   using W = typename Graph::weight_type;
   size_t n = GA.n;
+  std::cout << "start degeneracy order" << std::endl;
   auto degeneracy_order = DegeneracyOrder(GA);
   auto vtx_to_position = sequence<uintE>(n);
 
@@ -51,10 +52,11 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
     uintE v = degeneracy_order.A[i];
     vtx_to_position[v] = i;
   });
+  std::cout << "dengeneracy order" << std::endl;
 
-  auto density_above = sequence<size_t>(n);
+  auto density_above = sequence<uintE>(n);
 
-  parallel_for(0, n, 1, [&](size_t i) {
+  parallel_for(0, n, 1, [&](uintE i) {
     uintE pos_u = vtx_to_position[i];
     auto vtx_f = [&](const uintE& u, const uintE& v, const W& wgh) {
       uintE pos_v = vtx_to_position[v];
@@ -63,15 +65,11 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
     density_above[pos_u] = 2 * GA.get_vertex(i).out_neighbors().count(vtx_f);
   });
 
+  std::cout << "density above: " << density_above[0] << ", " << density_above[n-1] << std::endl;
+
   auto density_rev =
       parlay::make_slice(density_above.rbegin(), density_above.rend());
   size_t total_edges = parlay::scan_inplace(density_rev);
-  auto new_density_above = sequence<size_t>(density_above.size());
-  new_density_above[0] = GA.m;
-  parallel_for(0, density_above.size()-1, [&] (size_t i) {
-    new_density_above[i + 1] = density_above[i];
-  });
-  density_above = new_density_above;
 
   if (total_edges != GA.m) {
     std::cout << "Assert failed: total_edges should be " << GA.m
@@ -79,15 +77,21 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
     exit(0);
   }
 
-  if (density_above[0] != GA.m)
-      std::cout << density_above[0] << ", " << GA.m << std::endl;
-
   auto density_seq = parlay::delayed_seq<double>(n, [&](size_t i) {
-    size_t dens = density_above[i];
-    size_t rem = n - i;
+    size_t dens;
+    size_t rem;
+    if (i == 0) {
+        dens = GA.m;
+        rem = n;
+    } else {
+        dens = density_above[i - 1];
+        rem = n - i;
+    }
     return static_cast<double>(dens) / static_cast<double>(rem);
   });
-  double max_density = parlay::reduce_max(density_seq);
+
+  auto max_density = parlay::reduce_max(density_seq);
+
   std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2.0
             << std::endl;
   return max_density;

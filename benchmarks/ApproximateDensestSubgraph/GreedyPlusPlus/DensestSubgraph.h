@@ -51,11 +51,16 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
   };
   auto GA = filterGraph(G, predicate);
 
+  std::cout << "### New m: " << GA.m << std::endl;
+  std::cout << "### Max Core/2: " << max_core/2 << std::endl;
+
   size_t n = GA.n;
   auto D = sequence<uintE>::from_function(
       n, [&](size_t i) { return GA.get_vertex(i).out_degree();
       //return floor(pow(1.05, floor(log(GA.get_vertex(i).out_degree()/log(1.05)))));
   });
+
+  auto first = true;
 
   auto rnd = parlay::random(seed);
 
@@ -92,16 +97,16 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
                 << " but is: " << total_edges << std::endl;
       exit(0);
     }
-    auto new_density_above = sequence<size_t>(density_above.size());
-    new_density_above[0] = GA.m;
-    parallel_for(0, density_above.size()-1, [&] (size_t i) {
-        new_density_above[i + 1] = density_above[i];
-    });
-    density_above = new_density_above;
 
     auto density_seq = parlay::delayed_seq<double>(n, [&](size_t i) {
-      size_t dens = density_above[i];
-      size_t rem = n - i;
+      size_t dens;
+      size_t rem;
+      if (i == 0) {
+        dens = GA.m;
+      } else {
+        dens = density_above[i - 1];
+      }
+      rem = n - i;
       return static_cast<double>(dens) / static_cast<double>(rem);
     });
     max_density = std::max(max_density,parlay::reduce_max(density_seq));
@@ -109,6 +114,16 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
               << std::endl;
 
     std::cout << "### " << T << " remaining rounds" << std::endl;
+
+    //Bug in filtering filtered graph
+    /*if (first && GA.m > 10e6) {
+        auto predicate2 = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+            return (cores[u] >= (uintE) (max_density)) && (cores[v] >= (uintE) (max_density));
+        };
+        auto GA2 = filterGraph(GA, predicate2);
+        first = false;
+        GA = GA2;
+    }*/
 
   }
   return max_density;

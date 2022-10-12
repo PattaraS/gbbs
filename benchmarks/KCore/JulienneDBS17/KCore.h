@@ -174,7 +174,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
   auto degeneracy_order = gbbs::dyn_arr<uintE>(n);
 
   size_t finished = 0, rho = 0, k_max = 0;
-  while (finished != n) {
+  while (finished < n) {
     bt.start();
     auto bkt = b.next_bucket();
     bt.stop();
@@ -183,8 +183,9 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
     finished += active.size();
     k_max = std::max(k_max, bkt.id);
 
+    //std::cout << "generating order" << finished << std::endl;
     auto active_seq = parlay::delayed_seq<uintE>(
-        active.size(), [&](size_t i) { return active.s[i]; });
+        active.size(), [&](uintE i) { return active.s[i]; });
     degeneracy_order.copyIn(active_seq, active.size());
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
