@@ -32,6 +32,10 @@ namespace gbbs {
 // expected work and O(\rho\log n) depth w.h.p.
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
+
+  using W = typename Graph::weight_type;
+  typedef symmetric_graph<gbbs::symmetric_vertex, W> sym_graph;
+
   // deg_ord = degeneracy_order(GA)
   // ## Now, density check for graph after removing each vertex, in the
   // peeling-order.
@@ -42,21 +46,22 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
   // density w/o vertex_i = S[i] / (n - i)
   // Compute the max over all v.
 
+
   double max_density = 0.0;
-  using W = typename Graph::weight_type;
+
   auto cores = KCore(G, 16);
   auto max_core = parlay::reduce_max(cores);
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= max_core/2) && (cores[v] >= max_core/2);
   };
-  auto GA = std::make_unique(inducedSubgraph(G, predicate));
+  std::unique_ptr<sym_graph> GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
 
-  std::cout << "### New m: " << GA.m << std::endl;
+  std::cout << "### New m: " << GA->m << std::endl;
   std::cout << "### Max Core/2: " << max_core/2 << std::endl;
 
-  size_t n = GA.n;
+  size_t n = GA->n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return GA.get_vertex(i).out_degree();
+      n, [&](size_t i) { return GA->get_vertex(i).out_degree();
       //return floor(pow(1.05, floor(log(GA.get_vertex(i).out_degree()/log(1.05)))));
   });
 
@@ -65,7 +70,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
   auto rnd = parlay::random(seed);
 
   while (--T > 0) {
-    auto degeneracy_order = DegeneracyOrderWithLoad(GA, D, 16, rnd);
+    auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
     auto vtx_to_position = sequence<uintE>(n);
 
     parallel_for(0, n, [&](size_t i) {
@@ -81,7 +86,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
         uintE pos_v = vtx_to_position[v];
         return pos_u < pos_v;
       };
-      density_above[pos_u] = 2 * GA.get_vertex(i).out_neighbors().count(vtx_f);
+      density_above[pos_u] = 2 * GA->get_vertex(i).out_neighbors().count(vtx_f);
     });
 
     parallel_for(0, n, 1, [&](size_t i) {
@@ -92,8 +97,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
     auto density_rev =
         parlay::make_slice(density_above.rbegin(), density_above.rend());
     size_t total_edges = parlay::scan_inplace(density_rev);
-    if (total_edges != GA.m) {
-      std::cout << "Assert failed: total_edges should be " << GA.m
+    if (total_edges != GA->m) {
+      std::cout << "Assert failed: total_edges should be " << GA->m
                 << " but is: " << total_edges << std::endl;
       exit(0);
     }
@@ -102,7 +107,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
       size_t dens;
       size_t rem;
       if (i == 0) {
-        dens = GA.m;
+        dens = GA->m;
       } else {
         dens = density_above[i - 1];
       }
@@ -115,17 +120,22 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
 
     std::cout << "### " << T << " remaining rounds" << std::endl;
 
-    if (first && GA.m > 10e6) {
-        auto cores2 = KCore(GA, 16);
-        auto predicate2 = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-            return (cores2[u] >= (uintE) (max_density/2)) && (cores2[v] >= (uintE) (max_density/2));
+
+    if (first && GA->m > 10e6) {
+        auto cores2 = KCore(*GA, 16);
+        auto km = (uintE) ceil(max_density/2);
+        auto predicate2 = [&cores2, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
+            return (cores2[u] >= km && cores2[v] >= km);
         };
-        std::cout << "old vertices: " << GA.n << ", edges: " << GA.m << std::endl;
-        auto GA2 = inducedSubgraph(GA, predicate2);
+        std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(inducedSubgraph(*GA, predicate2));
         first = false;
-        std::cout << "GA2 new number of vertices: " << GA2.n << ", new edges: " << GA2.m << std::endl;
-        GA = GA2;
-        std::cout << "new number of vertices: " << GA.n << ", new edges: " << GA.m << std::endl;
+        GA = std::move(GA2);
+        std::cout << "new number of vertices: " << GA->n << ", new edges: " << GA->m << std::endl;
+        n = GA->n;
+        D = sequence<uintE>::from_function(
+            n, [&](size_t i) { return GA->get_vertex(i).out_degree();
+        });
+
     }
 
   }
