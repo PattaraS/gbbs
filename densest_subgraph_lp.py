@@ -46,22 +46,29 @@ def densest_subgraph_lp_run(adj_list):
 
     m.setObjective(quicksum(e for e in edge_vars), GRB.MAXIMIZE)
 
-    m.optimize()
+    m.setParam(GRB.Param.Method, 5)
 
-    print('Density: {}'.format(m.objVal))
+    # m.optimize()
 
-    n = sum(1 for u in vertex_vars if vertex_vars[u].x > 0)
-    m = sum(1 for e in edge_vars if e.x > 0 )
+    # print('Density: {}'.format(m.objVal))
 
-    print('n: {}, m: {}'.format(n,m))
+    # n = sum(1 for u in vertex_vars if vertex_vars[u].x > 0)
+    # edge_count = sum(1 for e in edge_vars if e.x > 0 )
+
+    # print('n: {}, m: {}'.format(n,edge_count))
+
+    return m,vertex_vars,edge_vars
 
 def read_adj_list_file(name):
     adj_list = list()
     with open(name, 'r') as f:
+        f.readline()
         for line in f.readlines():
-            tokens = line.split('\t')
+            tokens = line.split(' ')
             u = int(tokens[0])
             v = int(tokens[1])
             adj_list.append((u,v))
     return adj_list
 
+adj_list = read_adj_list_file('/home/ubuntu/graphs/orkut_cores')
+model, v_vars, e_vars = densest_subgraph_lp_run(adj_list)
