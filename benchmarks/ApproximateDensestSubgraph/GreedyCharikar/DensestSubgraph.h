@@ -46,6 +46,7 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
   size_t n = GA.n;
   std::cout << "start degeneracy order" << std::endl;
   auto degeneracy_order = DegeneracyOrder(GA);
+  std::cout << "end degeneracy order" << std::endl;
   auto vtx_to_position = sequence<uintE>(n);
 
   parallel_for(0, n, [&](size_t i) {
@@ -69,7 +70,7 @@ double CharikarAppxDensestSubgraph(Graph& GA) {
 
   auto density_rev =
       parlay::make_slice(density_above.rbegin(), density_above.rend());
-  size_t total_edges = parlay::scan_inplace(density_rev);
+  size_t total_edges = parlay::scan_inclusive_inplace(density_rev);
 
   if (total_edges != GA.m) {
     std::cout << "Assert failed: total_edges should be " << GA.m

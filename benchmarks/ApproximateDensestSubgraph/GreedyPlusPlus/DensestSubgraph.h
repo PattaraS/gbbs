@@ -49,7 +49,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= max_core/2) && (cores[v] >= max_core/2);
   };
-  auto GA = filterGraph(G, predicate);
+  auto GA = std::make_unique(inducedSubgraph(G, predicate));
 
   std::cout << "### New m: " << GA.m << std::endl;
   std::cout << "### Max Core/2: " << max_core/2 << std::endl;
@@ -115,15 +115,18 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
 
     std::cout << "### " << T << " remaining rounds" << std::endl;
 
-    //Bug in filtering filtered graph
-    /*if (first && GA.m > 10e6) {
+    if (first && GA.m > 10e6) {
+        auto cores2 = KCore(GA, 16);
         auto predicate2 = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-            return (cores[u] >= (uintE) (max_density)) && (cores[v] >= (uintE) (max_density));
+            return (cores2[u] >= (uintE) (max_density/2)) && (cores2[v] >= (uintE) (max_density/2));
         };
-        auto GA2 = filterGraph(GA, predicate2);
+        std::cout << "old vertices: " << GA.n << ", edges: " << GA.m << std::endl;
+        auto GA2 = inducedSubgraph(GA, predicate2);
         first = false;
+        std::cout << "GA2 new number of vertices: " << GA2.n << ", new edges: " << GA2.m << std::endl;
         GA = GA2;
-    }*/
+        std::cout << "new number of vertices: " << GA.n << ", new edges: " << GA.m << std::endl;
+    }
 
   }
   return max_density;

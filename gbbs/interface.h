@@ -146,4 +146,50 @@ edge_array<typename Graph::weight_type> sampleEdges(Graph& G, P& pred) {
   return sample_edges(G, pred);
 }
 
+template <
+    template <class inner_wgh> class vtx_type, class wgh_type, typename P>
+    /*typename std::enable_if<
+        std::is_same<vtx_type<wgh_type>, symmetric_vertex<wgh_type>>::value,
+        int>::type = 0>*/
+static inline symmetric_graph<gbbs::symmetric_vertex, wgh_type> inducedSubgraph(
+        symmetric_graph<vtx_type, wgh_type>& G,
+        P& pred) {
+    auto filtered_edges =  filter_all_edges(G, pred).E;
+    auto filter_dup = sequence<uintE>(2*filtered_edges.size());
+    std::cout << "dup: " << filter_dup.size() << std::endl;
+    parallel_for(0, filtered_edges.size(), [&] (size_t i) {
+        auto edge = filtered_edges[i];
+        filter_dup[2*i] = std::get<0>(edge);
+        filter_dup[2*i + 1] = std::get<1>(edge);
+    });
+    auto compare_tup = [&] (const uintE& l, const uintE& r) {return l < r;};
+    parlay::sort_inplace(parlay::make_slice(filter_dup), compare_tup);
+
+    // Remove duplicate vertices.
+    auto not_dup_seq = parlay::delayed_seq<uintE>(filter_dup.size(), [&](size_t i){
+        if ((i == 0) || (filter_dup[i] != filter_dup[i-1])) {
+            return filter_dup[i];
+        } else {
+            return UINT_MAX;
+        }
+    });
+
+    // Filter to unique vertices
+    auto unique_vertices = parlay::filter(not_dup_seq, [&](const uintE& v) {
+        return (v != UINT_MAX);
+    });
+
+    auto map_to_new_index = sequence<uintE>(G.n);
+    parallel_for(0, unique_vertices.size(), [&] (size_t i) {
+        map_to_new_index[unique_vertices[i]] = i;
+    });
+
+    parallel_for(0, filtered_edges.size(), [&] (size_t i){
+        auto [u, v, weight] = filtered_edges[i];
+        filtered_edges[i] = {map_to_new_index[u], map_to_new_index[v], weight};
+    });
+
+    return sym_graph_from_edges(filtered_edges, unique_vertices.size());
+}
+
 }  // namespace gbbs
