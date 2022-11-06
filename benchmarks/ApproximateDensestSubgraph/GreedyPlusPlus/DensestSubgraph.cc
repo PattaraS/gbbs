@@ -38,7 +38,6 @@ namespace {
 
 template <class Graph>
 double DensestSubgraph_runner(Graph& G, commandLine P) {
-  double eps = P.getOptionDoubleValue("-eps", 0.001);
   size_t seed = P.getOptionIntValue("-seed", 1);
   size_t iter = P.getOptionIntValue("-iter", 5);
   std::cout << "### Application: DensestSubgraph" << std::endl;
@@ -46,7 +45,6 @@ double DensestSubgraph_runner(Graph& G, commandLine P) {
   std::cout << "### Threads: " << num_workers() << std::endl;
   std::cout << "### n: " << G.n << std::endl;
   std::cout << "### m: " << G.m << std::endl;
-  std::cout << "### Params: -eps = " << eps << std::endl;
   std::cout << "### Params: -seed = " << seed << std::endl;
   std::cout << "### Params: -iter = " << iter << std::endl;
   std::cout << "### ------------------------------------" << std::endl;
