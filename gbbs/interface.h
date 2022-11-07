@@ -154,7 +154,7 @@ template <
 static inline symmetric_graph<gbbs::symmetric_vertex, wgh_type> inducedSubgraph(
         symmetric_graph<vtx_type, wgh_type>& G,
         P& pred) {
-    auto filtered_edges =  filter_all_edges(G, pred).E;
+    auto filtered_edges =  sample_edges(G, pred).E;
     auto filter_dup = sequence<uintE>(2*filtered_edges.size());
     std::cout << "dup: " << filter_dup.size() << std::endl;
     parallel_for(0, filtered_edges.size(), [&] (size_t i) {

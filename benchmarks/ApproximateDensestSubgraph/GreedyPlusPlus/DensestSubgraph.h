@@ -121,7 +121,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
     std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
-    if (first && max_density > (1.5) * (max_core/2)) {
+    //if (first && GA->m > 10e6) {
+    if (first && max_density > (max_core/2) * 1.5) {
         auto cores2 = KCore(*GA, 16);
         auto km = (uintE) ceil(max_density/2);
         auto predicate2 = [&cores2, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
