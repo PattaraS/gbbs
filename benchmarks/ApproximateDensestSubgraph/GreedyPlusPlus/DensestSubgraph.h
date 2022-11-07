@@ -52,11 +52,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
   auto cores = KCore(G, 16);
   auto max_core = parlay::reduce_max(cores);
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-      return (cores[u] >= max_core/2) && (cores[v] >= max_core/2);
+      return (cores[u] >= ceil(max_core/2)) && (cores[v] >= ceil(max_core/2));
   };
   std::unique_ptr<sym_graph> GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
 
-  std::cout << "### New m: " << GA->m << std::endl;
+  std::cout << "### New max core/2 m: " << GA->m << ", n: " << GA->n << std::endl;
   std::cout << "### Max Core/2: " << max_core/2 << std::endl;
 
   size_t n = GA->n;
@@ -121,7 +121,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
     std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
-    if (first && GA->m > 10e6) {
+    if (first && max_density > (1.5) * (max_core/2)) {
         auto cores2 = KCore(*GA, 16);
         auto km = (uintE) ceil(max_density/2);
         auto predicate2 = [&cores2, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
@@ -130,7 +130,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
         std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(inducedSubgraph(*GA, predicate2));
         first = false;
         GA = std::move(GA2);
-        std::cout << "new number of vertices: " << GA->n << ", new edges: " << GA->m << std::endl;
+        std::cout << "### New Density number of vertices: " << GA->n << ", new edges: " << GA->m << std::endl;
         n = GA->n;
         D = sequence<uintE>::from_function(
             n, [&](size_t i) { return GA->get_vertex(i).out_degree();
