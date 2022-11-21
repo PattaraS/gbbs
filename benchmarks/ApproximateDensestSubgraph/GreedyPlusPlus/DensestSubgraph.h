@@ -63,7 +63,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     };
     GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
   } else {
-    GA = std::make_unique<sym_graph>(sym_graph(G));
+    //GA = std::make_unique<sym_graph>(sym_graph(G));
+    auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+      return true;
+    };
+    GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
   }
   size_t n = GA->n;
 
