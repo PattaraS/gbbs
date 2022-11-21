@@ -52,11 +52,13 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   uintE max_core = 0 ;
   if (option_run != 4) {
     sequence<uintE> cores;
+    std::cout << "Start computing cores" << std::endl;
     if (option_run == 0) {
         cores = ApproxKCore(G, 16, approx_kcore_base);
     } else {
         cores = KCore(G, 16);
     }
+    std::cout << "Finish computing cores" << std::endl;
     max_core = parlay::reduce_max(cores);
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= ceil(max_core/2)) && (cores[v] >= ceil(max_core/2));
@@ -135,10 +137,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         total_densest_time += iter_densest_time;
     //}
     std::cout << "### Iter " << T << " time: " << iter_densest_time << std::endl;
-    /*std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2
+    std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2
               << std::endl;
 
-    std::cout << "### " << T << " remaining rounds" << std::endl;*/
+    std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
     //if (first && GA->m > 10e6) {
@@ -167,9 +169,9 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 };
                 GA->get_vertex(cur_vert).out_neighbors().map_with_index(map_f, false);
 
-                for (size_t idx = 0; idx < edges.size(); idx++) {
-                    std::cout << edges[idx].first + 1 << " " << edges[idx].second + 1 << std::endl;
-                }
+                //for (size_t idx = 0; idx < edges.size(); idx++) {
+                    //std::cout << edges[idx].first + 1 << " " << edges[idx].second + 1 << std::endl;
+                //}
             }
         }
 
