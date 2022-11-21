@@ -49,22 +49,21 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   double max_density = 0.0;
 
   std::unique_ptr<sym_graph> GA;
-
+  uintE max_core = 0 ;
   if (option_run != 4) {
     sequence<uintE> cores;
     if (option_run == 0) {
         cores = ApproxKCore(G, 16, approx_kcore_base);
-    else {
+    } else {
         cores = KCore(G, 16);
     }
-    auto max_core = parlay::reduce_max(cores);
+    max_core = parlay::reduce_max(cores);
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= ceil(max_core/2)) && (cores[v] >= ceil(max_core/2));
     };
     GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
   } else {
-    //GA = std::move(G);
-    GA = std::make_unique<sym_graph>(sym_graph_from_edges(G.E, G.n));
+    GA = std::make_unique<sym_graph>(sym_graph(G));
   }
   size_t n = GA->n;
 
