@@ -85,7 +85,10 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
   const size_t n = G.n;
   auto D = sequence<uintE>::from_function(
       n, [&](size_t i) { return
-           (uintE) floor(pow(approx_kcore_mult, floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult)))))
+           (uintE) floor(pow(
+                       approx_kcore_mult, 
+                       floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult))
+                       ));
       });
 
   auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
