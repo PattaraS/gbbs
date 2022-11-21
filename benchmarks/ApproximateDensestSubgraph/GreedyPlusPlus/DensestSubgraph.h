@@ -28,48 +28,58 @@
 
 namespace gbbs {
 
-// Implements a parallel version of Charikar's 2-appx that runs in O(m+n)
-// expected work and O(\rho\log n) depth w.h.p.
+// Implements a parallel version of Greedy++ that runs a parallel version of
+// Charikar's 2-approx algorithm for several iterations given as a parameter
+// into the problem as T, each run is O(m+n) expected work and O(\rho\log n) depth w.h.p.
+// for a total of O(T(m + n)) expected work and O(T\rho\log n) depth w.h.p.
+//
+// option_run parameters:
+//  0: approximate k-core first round, ceil of approximate density second run
+//  1: exact k-core first round, ceil of approximate density second run
+//  2: outputs running time of algorithm when run on ceil of approximate density
+//  3: outputs running time of algorithm when only (max k)/2 core
+//  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
-double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
+double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
+        int option_run = 0, double approx_kcore_base = 1.05) {
 
   using W = typename Graph::weight_type;
   typedef symmetric_graph<gbbs::symmetric_vertex, W> sym_graph;
 
-  // deg_ord = degeneracy_order(GA)
-  // ## Now, density check for graph after removing each vertex, in the
-  // peeling-order.
-  // Let S = stores 2*#edges to vertices > in degeneracy order. Note that 2* is
-  //         needed since higher-ordered vertices don't have the edge to us.
-  //
-  // S = scan(S, fl_inplace | fl_reverse) ## reverse scan
-  // density w/o vertex_i = S[i] / (n - i)
-  // Compute the max over all v.
-
-
   double max_density = 0.0;
 
-  auto cores = KCore(G, 16);
-  auto max_core = parlay::reduce_max(cores);
-  auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+  std::unique_ptr<sym_graph> GA;
+
+  if (option_run != 4) {
+    sequence<uintE> cores;
+    if (option_run == 0) {
+        cores = ApproxKCore(G, 16, approx_kcore_base);
+    else {
+        cores = KCore(G, 16);
+    }
+    auto max_core = parlay::reduce_max(cores);
+    auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= ceil(max_core/2)) && (cores[v] >= ceil(max_core/2));
-  };
-  std::unique_ptr<sym_graph> GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
-
-  std::cout << "### New max core/2 m: " << GA->m << ", n: " << GA->n << std::endl;
-  std::cout << "### Max Core/2: " << max_core/2 << std::endl;
-
+    };
+    GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
+  } else {
+    GA = std::move(G);
+  }
   size_t n = GA->n;
+
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return GA->get_vertex(i).out_degree();
-      //return floor(pow(1.05, floor(log(GA.get_vertex(i).out_degree()/log(1.05)))));
+    n, [&](size_t i) { return GA->get_vertex(i).out_degree();
   });
 
   auto first = true;
 
   auto rnd = parlay::random(seed);
+  auto total_densest_time = 0.0;
+  auto num_iters = 0;
 
   while (--T > 0) {
+    timer densest_timer;
+    densest_timer.start();
     auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
     auto vtx_to_position = sequence<uintE>(n);
 
@@ -115,14 +125,21 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
       return static_cast<double>(dens) / static_cast<double>(rem);
     });
     max_density = std::max(max_density,parlay::reduce_max(density_seq));
-    std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2
+    auto iter_densest_time = densest_timer.stop();
+    //if (!first) {
+        num_iters += 1;
+        total_densest_time += iter_densest_time;
+    //}
+    std::cout << "### Iter " << T << " time: " << iter_densest_time << std::endl;
+    /*std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2
               << std::endl;
 
-    std::cout << "### " << T << " remaining rounds" << std::endl;
+    std::cout << "### " << T << " remaining rounds" << std::endl;*/
 
 
     //if (first && GA->m > 10e6) {
-    if (first && max_density > (max_core/2) * 1.5) {
+    if ((option_run != 3 || option_run != 4) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
+
         auto cores2 = KCore(*GA, 16);
         auto km = (uintE) ceil(max_density/2);
         auto predicate2 = [&cores2, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
@@ -131,15 +148,32 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1) {
         std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(inducedSubgraph(*GA, predicate2));
         first = false;
         GA = std::move(GA2);
-        std::cout << "### New Density number of vertices: " << GA->n << ", new edges: " << GA->m << std::endl;
+        //std::cout << "### New Density number of vertices: " << GA->n << ", new edges: " << GA->m << std::endl;
         n = GA->n;
         D = sequence<uintE>::from_function(
             n, [&](size_t i) { return GA->get_vertex(i).out_degree();
         });
 
+        std::cout << GA->n << " " << GA->m << std::endl;
+        for (size_t cur_vert = 0 ; cur_vert < GA->n ; cur_vert++) {
+            if (GA->get_vertex(cur_vert).out_degree() > 0) {
+                auto edges = parlay::sequence<std::pair<uintE, uintE>>(GA->get_vertex(cur_vert).out_degree());
+                auto map_f = [&](const uintE& u, const uintE& v, const W& wgh, const uintE& nghind) {
+                    edges[nghind] = std::make_pair(u, v);
+                };
+                GA->get_vertex(cur_vert).out_neighbors().map_with_index(map_f, false);
+
+                for (size_t idx = 0; idx < edges.size(); idx++) {
+                    std::cout << edges[idx].first + 1 << " " << edges[idx].second + 1 << std::endl;
+                }
+            }
+        }
+
     }
 
   }
+  std::cout << "### Total core time: " << total_densest_time << std::endl;
+  std::cout << "### Avg core time: " << total_densest_time / num_iters << std::endl;
   return max_density;
 }
 

@@ -80,17 +80,55 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
   return D;
 }
 
-/*template <class Graph>
-inline auto HalfKCoreSubgraph(Graph& G)
-  using W = typename Graph::weight_type;
-  auto cores = KCore(G, 16);
-  auto max_core = parlay::reduce_max(cores);
-  auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-      return (cores[u] >= max_core/2) && (cores[v] >= max_core/2);
-  };
-  auto GA = filterGraph(G, predicate);
-  return GA;
-}*/
+template <class Graph>
+inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double approx_kcore_mult = 1.05) {
+  const size_t n = G.n;
+  auto D = sequence<uintE>::from_function(
+      n, [&](size_t i) { return
+           (uintE) floor(pow(approx_kcore_mult, floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult)))))
+      });
+
+  auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
+                                     (size_t)G.m / 50);
+  auto b = make_vertex_buckets(n, D, increasing, num_buckets);
+  timer bt;
+
+  size_t finished = 0, rho = 0, k_max = 0;
+  while (finished != n) {
+    bt.start();
+    auto bkt = b.next_bucket();
+    bt.stop();
+    auto active = vertexSubset(n, std::move(bkt.identifiers));
+    uintE k = bkt.id;
+    finished += active.size();
+    k_max = std::max(k_max, bkt.id);
+
+    auto apply_f = [&](const std::tuple<uintE, uintE>& p)
+        -> const std::optional<std::tuple<uintE, uintE> > {
+          uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
+          uintE deg = D[v];
+          if (deg > k) {
+            uintE new_deg = std::max(k,
+                (uintE) floor(pow(approx_kcore_mult, floor(log(deg - edgesRemoved)/log(approx_kcore_mult)))));
+            D[v] = new_deg;
+            return wrap(v, b.get_bucket(new_deg));
+          }
+          return std::nullopt;
+        };
+
+    auto cond_f = [](const uintE& u) { return true; };
+    vertexSubsetData<uintE> moved =
+        nghCount(G, active, cond_f, apply_f, em, no_dense);
+
+    bt.start();
+    b.update_buckets(moved);
+    bt.stop();
+    rho++;
+  }
+  std::cout << "### rho = " << rho << " k_{max} = " << k_max << "\n";
+  debug(bt.next("bucket time"););
+  return D;
+}
 
 template <class W>
 struct kcore_fetch_add {
@@ -308,9 +346,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
           if (deg > k) {
             // store actual degree for densest subgraph # and peeling degree
             uintE new_deg =
-                std::max(k,
-                        //(uintE) floor(pow(1.05,floor(log(deg - edgesRemoved)/log(1.05)))));
-                        deg-edgesRemoved);
+                std::max(k, deg-edgesRemoved);
             uintE original = std::max(deg - edgesRemoved, k);
             D[v] = new_deg;
             return wrap(v, b.get_bucket(new_deg));
