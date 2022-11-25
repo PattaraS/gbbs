@@ -73,7 +73,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     std::cout << "Max core-number is: " << max_core << std::endl;
 
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-      return (cores[u] >= ceil(max_core/2)) && (cores[v] >= ceil(max_core/2));
+        uintE threshold = ceil(max_core/2);
+        if (option_run == 0) {
+          threshold = floor(pow(approx_kcore_base, floor(log(threshold)/log(approx_kcore_base))));
+        }
+        
+        return (cores[u] >= threshold) && (cores[v] >= threshold);
     };
     GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
 
