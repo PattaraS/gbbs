@@ -54,6 +54,15 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     sequence<uintE> cores;
     std::cout << "Start computing cores" << std::endl;
+
+    auto approx_cores =  ApproxKCore(G, 16, approx_kcore_base);
+    auto exact_cores = KCore(G, 16);
+    
+    //auto max_exact_core = parlay::reduce_max(exact_cores);
+    //auto max_approx_core = parlay::reduce_max(approx_cores);
+
+    //std::cout << "Max Exact Core = " << max_exact_core << std::endl;
+    //std::cout << "Max Approx Core = " << max_approx_core << std::endl;
     if (option_run == 0) {
         cores = ApproxKCore(G, 16, approx_kcore_base);
     } else {
