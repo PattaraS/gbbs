@@ -84,20 +84,30 @@ template <class Graph>
 inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double approx_kcore_mult = 1.05) {
   const size_t n = G.n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return
+      n, [&](size_t i) { 
+        return G.get_vertex(i).out_degree();
+           //(uintE) floor(pow(
+                       //approx_kcore_mult, 
+                       //floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult))
+                       //));
+      });
+  auto approxD = sequence<uintE>::from_function(
+          n, [&](size_t i) {
+          return 
            (uintE) floor(pow(
                        approx_kcore_mult, 
                        floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult))
                        ));
-      });
+          });
 
   auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
                                      (size_t)G.m / 50);
-  auto b = make_vertex_buckets(n, D, increasing, num_buckets);
+  auto b = make_vertex_buckets(n, approxD, increasing, num_buckets);
   timer bt;
 
   size_t finished = 0, rho = 0, k_max = 0;
   while (finished != n) {
+    std::cout << "FINISHED: " << finished << std::endl;
     bt.start();
     auto bkt = b.next_bucket();
     bt.stop();
@@ -111,10 +121,14 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
           uintE deg = D[v];
           if (deg > k) {
-            uintE new_deg = std::max(k,
-                (uintE) floor(pow(approx_kcore_mult, floor(log(deg - edgesRemoved)/log(approx_kcore_mult)))));
+            uintE new_deg = std::max(k, deg - edgesRemoved);
+            uintE new_bkt = std::max(uintE(0),
+                (uintE) floor(pow(
+                        approx_kcore_mult, floor(log(new_deg)/log(approx_kcore_mult))
+                        )));
             D[v] = new_deg;
-            return wrap(v, b.get_bucket(new_deg));
+            approxD[v] = new_bkt;
+            return wrap(v, b.get_bucket(new_bkt));
           }
           return std::nullopt;
         };
@@ -130,7 +144,7 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
   }
   std::cout << "### rho = " << rho << " k_{max} = " << k_max << "\n";
   debug(bt.next("bucket time"););
-  return D;
+  return approxD;
 }
 
 template <class W>
