@@ -51,6 +51,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   std::unique_ptr<sym_graph> GA;
   uintE max_core = 0 ;
   if (option_run != 4) {
+
     sequence<uintE> cores;
     std::cout << "Start computing cores" << std::endl;
     if (option_run == 0) {
@@ -60,17 +61,26 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     }
     std::cout << "Finish computing cores" << std::endl;
     max_core = parlay::reduce_max(cores);
+    std::cout << "Max core-number is: " << max_core << std::endl;
+
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return (cores[u] >= ceil(max_core/2)) && (cores[v] >= ceil(max_core/2));
     };
     GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
+
+    std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
   } else {
-    //GA = std::make_unique<sym_graph>(sym_graph(G));
+
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
       return true;
     };
     GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
+
+
   }
+
+  
+
   size_t n = GA->n;
 
   auto D = sequence<uintE>::from_function(
@@ -137,14 +147,14 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         total_densest_time += iter_densest_time;
     //}
     std::cout << "### Iter " << T << " time: " << iter_densest_time << std::endl;
-    std::cout << "### Density of 2-Densest Subgraph is: " << max_density / 2
+    std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
               << std::endl;
 
     std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
     //if (first && GA->m > 10e6) {
-    if ((option_run != 3 || option_run != 4) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
+    if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
 
         auto cores2 = KCore(*GA, 16);
         auto km = (uintE) ceil(max_density/2);

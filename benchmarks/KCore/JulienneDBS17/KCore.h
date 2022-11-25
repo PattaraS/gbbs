@@ -83,52 +83,57 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
 template <class Graph>
 inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double approx_kcore_mult = 1.05) {
   const size_t n = G.n;
+
+  // D represents the actual degree
   auto D = sequence<uintE>::from_function(
       n, [&](size_t i) { 
         return G.get_vertex(i).out_degree();
-           //(uintE) floor(pow(
-                       //approx_kcore_mult, 
-                       //floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult))
-                       //));
       });
-  auto approxD = sequence<uintE>::from_function(
+
+  auto bucketer = [approx_kcore_mult](uintE i) {
+      return 
+       (uintE) floor(pow(
+                   approx_kcore_mult, 
+                   floor(log(i)/log(approx_kcore_mult))
+                   ));
+  };
+
+  auto bucket_map = sequence<uintE>::from_function(
           n, [&](size_t i) {
-          return 
-           (uintE) floor(pow(
-                       approx_kcore_mult, 
-                       floor(log(G.get_vertex(i).out_degree())/log(approx_kcore_mult))
-                       ));
+          return bucketer(D[i]);
           });
 
   auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
                                      (size_t)G.m / 50);
-  auto b = make_vertex_buckets(n, approxD, increasing, num_buckets);
+  auto b = make_vertex_buckets(n, bucket_map, increasing, num_buckets);
   timer bt;
 
   size_t finished = 0, rho = 0, k_max = 0;
   while (finished != n) {
-    std::cout << "FINISHED: " << finished << std::endl;
     bt.start();
     auto bkt = b.next_bucket();
     bt.stop();
+
     auto active = vertexSubset(n, std::move(bkt.identifiers));
+
     uintE k = bkt.id;
     finished += active.size();
+
     k_max = std::max(k_max, bkt.id);
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
         -> const std::optional<std::tuple<uintE, uintE> > {
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
-          uintE deg = D[v];
-          if (deg > k) {
-            uintE new_deg = std::max(k, deg - edgesRemoved);
-            uintE new_bkt = std::max(uintE(0),
-                (uintE) floor(pow(
-                        approx_kcore_mult, floor(log(new_deg)/log(approx_kcore_mult))
-                        )));
+          uintE v_bucket = bucket_map[v];
+
+          if (v_bucket > k) {
+            uintE new_deg = D[v] - edgesRemoved;
+            uintE new_bkt = std::max(k, bucketer(new_deg));
             D[v] = new_deg;
-            approxD[v] = new_bkt;
-            return wrap(v, b.get_bucket(new_bkt));
+            if (new_bkt != v_bucket) {
+                bucket_map[v] = new_bkt;
+                return wrap(v, b.get_bucket(new_bkt));
+            }
           }
           return std::nullopt;
         };
@@ -144,7 +149,8 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
   }
   std::cout << "### rho = " << rho << " k_{max} = " << k_max << "\n";
   debug(bt.next("bucket time"););
-  return approxD;
+
+  return D;
 }
 
 template <class W>
@@ -318,7 +324,9 @@ inline sequence<uintE> SeqDegeneracyOrderWithLoad(Graph& G, sequence<std::pair<u
 }
 
 template <class Graph>
-inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,size_t num_buckets = 16, parlay::random& rnd =parlay::random()) {
+inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
+        size_t num_buckets = 16, parlay::random& rnd = parlay::random()) {
+
   const size_t n = G.n;
 
   auto em = EdgeMap<uintE, Graph>(G, std::make_tuple(UINT_E_MAX, 0),
