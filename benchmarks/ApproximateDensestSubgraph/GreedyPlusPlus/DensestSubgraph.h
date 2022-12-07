@@ -49,14 +49,14 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   double max_density = 0.0;
 
   std::unique_ptr<sym_graph> GA;
-  uintE max_core = 0 ;
+  uintE max_core = 0;
   if (option_run != 4) {
 
     sequence<uintE> cores;
-    //std::cout << "Start computing cores" << std::endl;
+    std::cout << "Start computing cores" << std::endl;
 
-    auto approx_cores =  ApproxKCore(G, 16, approx_kcore_base);
-    auto exact_cores = KCore(G, 16);
+    //auto approx_cores =  ApproxKCore(G, 16, approx_kcore_base);
+    //auto exact_cores = KCore(G, 16);
 
     //auto max_exact_core = parlay::reduce_max(exact_cores);
     //auto max_approx_core = parlay::reduce_max(approx_cores);
@@ -68,14 +68,15 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     } else {
         cores = KCore(G, 16);
     }
+    std::cout << "Computed cores" << std::endl;
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core-number is: " << max_core << std::endl;
 
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
         uintE threshold = ceil(max_core/2);
-        if (option_run == 0) {
+        /*if (option_run == 0) {
           threshold = floor(pow(approx_kcore_base, floor(log(threshold)/log(approx_kcore_base))));
-        }
+        }*/
 
         return (cores[u] >= threshold) && (cores[v] >= threshold);
     };

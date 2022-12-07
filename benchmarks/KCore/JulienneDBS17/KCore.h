@@ -86,17 +86,22 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
 
   // D represents the actual degree
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { 
+      n, [&](size_t i) {
         return G.get_vertex(i).out_degree();
       });
 
   auto bucketer = [approx_kcore_mult](uintE i) {
-      return 
+      return
        (uintE) floor(pow(
-                   approx_kcore_mult, 
+                   approx_kcore_mult,
                    floor(log(i)/log(approx_kcore_mult))
                    ));
   };
+
+  auto approx_deg = sequence<uintE>::from_function(
+    n, [&](size_t i) {
+        return bucketer(D[i]);
+  });
 
   auto bucket_map = sequence<uintE>::from_function(
           n, [&](size_t i) {
@@ -136,6 +141,7 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
             uintE new_deg = D[v] - edgesRemoved;
             uintE new_bkt = std::max(k, bucketer(new_deg));
             D[v] = new_deg;
+            approx_deg[v] = new_bkt;
             if (new_bkt != v_bucket) {
                 bucket_map[v] = new_bkt;
                 return wrap(v, b.get_bucket(new_bkt));
@@ -156,7 +162,7 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
   std::cout << "### rho = " << rho << " k_{max} = " << k_max << "\n";
   debug(bt.next("bucket time"););
 
-  return D;
+  return approx_deg;
 }
 
 template <class W>
