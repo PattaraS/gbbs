@@ -90,7 +90,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto first = true;
 
     auto rnd = parlay::random(seed);
-    auto num_iters = 0;
 
     while (--T > 0) {
         auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);

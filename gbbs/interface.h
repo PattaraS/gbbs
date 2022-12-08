@@ -146,17 +146,13 @@ edge_array<typename Graph::weight_type> sampleEdges(Graph& G, P& pred) {
   return sample_edges(G, pred);
 }
 
-template <
-    template <class inner_wgh> class vtx_type, class wgh_type, typename P>
-    /*typename std::enable_if<
-        std::is_same<vtx_type<wgh_type>, symmetric_vertex<wgh_type>>::value,
-        int>::type = 0>*/
+template <template <class inner_wgh> class vtx_type, class wgh_type, typename P>
 static inline symmetric_graph<gbbs::symmetric_vertex, wgh_type> inducedSubgraph(
         symmetric_graph<vtx_type, wgh_type>& G,
         P& pred) {
     auto filtered_edges =  sample_edges(G, pred).E;
     auto filter_dup = sequence<uintE>(2*filtered_edges.size());
-    std::cout << "dup: " << filter_dup.size() << std::endl;
+    //std::cout << "dup: " << filter_dup.size() << std::endl;
     parallel_for(0, filtered_edges.size(), [&] (size_t i) {
         auto edge = filtered_edges[i];
         filter_dup[2*i] = std::get<0>(edge);

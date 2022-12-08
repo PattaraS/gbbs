@@ -98,15 +98,10 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
                    ));
   };
 
-  auto approx_deg = sequence<uintE>::from_function(
+  auto bucket_map = sequence<uintE>::from_function(
     n, [&](size_t i) {
         return bucketer(D[i]);
   });
-
-  auto bucket_map = sequence<uintE>::from_function(
-          n, [&](size_t i) {
-          return bucketer(D[i]);
-          });
 
   auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
                                      (size_t)G.m / 50);
@@ -141,7 +136,6 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
             uintE new_deg = D[v] - edgesRemoved;
             uintE new_bkt = std::max(k, bucketer(new_deg));
             D[v] = new_deg;
-            approx_deg[v] = new_bkt;
             if (new_bkt != v_bucket) {
                 bucket_map[v] = new_bkt;
                 return wrap(v, b.get_bucket(new_bkt));
@@ -162,7 +156,7 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
   std::cout << "### rho = " << rho << " k_{max} = " << k_max << "\n";
   debug(bt.next("bucket time"););
 
-  return approx_deg;
+  return bucket_map;
 }
 
 template <class W>
@@ -384,7 +378,7 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
             // store actual degree for densest subgraph # and peeling degree
             uintE new_deg =
                 std::max(k, deg-edgesRemoved);
-            uintE original = std::max(deg - edgesRemoved, k);
+            //uintE original = std::max(deg - edgesRemoved, k);
             D[v] = new_deg;
             return wrap(v, b.get_bucket(new_deg));
           }
