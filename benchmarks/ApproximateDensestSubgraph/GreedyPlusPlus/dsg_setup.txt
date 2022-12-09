@@ -1,0 +1,9 @@
+Input graph directory: /home/quanquan/graphs/original/
+Graphs: dblp_gbbs, hepph_gbbs, lj_gbbs, orkut_gbbs, stackoverflow_gbbs, wiki_gbbs, youtube_gbbs
+Output directory: data_out/
+Numbers of workers: 1
+Iterations: 10
+Approx Mult Factor: 2
+Rounds: 3
+Options: 0
+Compressed:
