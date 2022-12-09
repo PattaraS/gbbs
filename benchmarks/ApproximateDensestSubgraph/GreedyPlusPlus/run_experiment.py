@@ -9,14 +9,26 @@ def signal_handler(signal,frame):
   sys.exit(0)
 signal.signal(signal.SIGINT,signal_handler)
 
-def shellGetOutput(str) :
+class Alarm(Exception):
+    pass
+
+def alarm_handler(signum, frame):
+    raise Alarm
+
+def shellGetOutput(str, timeout):
   process = subprocess.Popen(str,shell=True,stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-  output, err = process.communicate()
-
-  if (len(err) > 0):
-    raise NameError(str+"\n"+output.decode('utf-8')+err.decode('utf-8'))
-  return output.decode('utf-8')
+  signal.signal(signal.SIGALRM, alarm_handler)
+  signal.alarm(timeout * 60)
+  try:
+    output, err = process.communicate()
+    if (len(err) > 0):
+        raise NameError(str+"\n"+output.decode('utf-8')+err.decode('utf-8'))
+    return output.decode('utf-8')
+    signal.alarm(0)
+  except Alarm:
+    print("Took too long!")
+    return "Took too long!"
 
 def appendToFile(out, filename):
   with open(filename, "a+") as out_file:
@@ -61,7 +73,7 @@ def main():
                     out_filename = os.path.join(write_dir, "_".join(out_path_components))
                     ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
                     print(ss)
-                    out = shellGetOutput(ss)
+                    out = shellGetOutput(ss, 120)
                     appendToFile(out, out_filename)
 
 if __name__ == "__main__":

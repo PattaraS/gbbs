@@ -115,17 +115,17 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         auto density_rev =
             parlay::make_slice(density_above.rbegin(), density_above.rend());
         size_t total_edges = parlay::scan_inplace(density_rev);
-        if (total_edges != GA->m) {
+        /*if (total_edges != GA->m) {
             std::cout << "Assert failed: total_edges should be " << GA->m
                 << " but is: " << total_edges << std::endl;
             exit(0);
-        }
+        }*/
 
         auto density_seq = parlay::delayed_seq<double>(n, [&](size_t i) {
             size_t dens;
             size_t rem;
             if (i == 0) {
-                dens = GA->m;
+                dens = total_edges;
             } else {
                 dens = density_above[i - 1];
             }
@@ -157,12 +157,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             std::cout << GA->n << " " << GA->m << std::endl;
             if (option_run == 2)
                 densest_timer.start();
-
         }
     }
     total_densest_time += densest_timer.stop();
   } else {
-
     densest_timer.start();
     auto n = G.n;
     auto D = sequence<uintE>::from_function(
@@ -194,17 +192,17 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         auto density_rev =
             parlay::make_slice(density_above.rbegin(), density_above.rend());
         size_t total_edges = parlay::scan_inplace(density_rev);
-        if (total_edges != G.m) {
+        /*if (total_edges != G.m) {
             std::cout << "Assert failed: total_edges should be " << G.m
                 << " but is: " << total_edges << std::endl;
             exit(0);
-        }
+        }*/
 
         auto density_seq = parlay::delayed_seq<double>(n, [&](size_t i) {
             size_t dens;
             size_t rem;
             if (i == 0) {
-                dens = G.m;
+                dens = total_edges;
             } else {
                 dens = density_above[i - 1];
             }
