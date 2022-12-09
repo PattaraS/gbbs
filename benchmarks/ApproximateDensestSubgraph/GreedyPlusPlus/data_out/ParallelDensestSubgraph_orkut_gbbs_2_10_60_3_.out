@@ -1,0 +1,130 @@
+### Application: DensestSubgraph
+### Graph: /home/quanquan/graphs/original/orkut_gbbs
+### Threads: 60
+### n: 3072441
+### m: 234370166
+### Params: -seed = 1
+### Params: -iter = 10
+### Params: -cutoff = 1
+### Params: -option = 3
+### Params: -approx_kcore_base = 2
+### ------------------------------------
+### rho = 5666 k_{max} = 253
+Max core number is: 253
+Pruned graph (n,m) = (71507,26939444)
+### rho = 1746 k_{max} = 253
+### Density of current Densest Subgraph is: 227.867
+### 9 remaining rounds
+### rho = 2265 k_{max} = 504
+### Density of current Densest Subgraph is: 227.873
+### 8 remaining rounds
+### rho = 2589 k_{max} = 737
+### Density of current Densest Subgraph is: 227.873
+### 7 remaining rounds
+### rho = 2858 k_{max} = 949
+### Density of current Densest Subgraph is: 227.873
+### 6 remaining rounds
+### rho = 3000 k_{max} = 1177
+### Density of current Densest Subgraph is: 227.873
+### 5 remaining rounds
+### rho = 3402 k_{max} = 1411
+### Density of current Densest Subgraph is: 227.874
+### 4 remaining rounds
+### rho = 3499 k_{max} = 1649
+### Density of current Densest Subgraph is: 227.874
+### 3 remaining rounds
+### rho = 3742 k_{max} = 1867
+### Density of current Densest Subgraph is: 227.874
+### 2 remaining rounds
+### rho = 3838 k_{max} = 2090
+### Density of current Densest Subgraph is: 227.874
+### 1 remaining rounds
+### Total core time: 2.02874
+### Avg core time: 0.202874
+### Application: DensestSubgraph
+### Graph: /home/quanquan/graphs/original/orkut_gbbs
+### Threads: 60
+### n: 3072441
+### m: 234370166
+### Params: -seed = 1
+### Params: -iter = 10
+### Params: -cutoff = 1
+### Params: -option = 3
+### Params: -approx_kcore_base = 2
+### ------------------------------------
+### rho = 5666 k_{max} = 253
+Max core number is: 253
+Pruned graph (n,m) = (71507,26939444)
+### rho = 1746 k_{max} = 253
+### Density of current Densest Subgraph is: 227.867
+### 9 remaining rounds
+### rho = 2265 k_{max} = 504
+### Density of current Densest Subgraph is: 227.873
+### 8 remaining rounds
+### rho = 2589 k_{max} = 737
+### Density of current Densest Subgraph is: 227.873
+### 7 remaining rounds
+### rho = 2858 k_{max} = 949
+### Density of current Densest Subgraph is: 227.873
+### 6 remaining rounds
+### rho = 3000 k_{max} = 1177
+### Density of current Densest Subgraph is: 227.873
+### 5 remaining rounds
+### rho = 3402 k_{max} = 1411
+### Density of current Densest Subgraph is: 227.874
+### 4 remaining rounds
+### rho = 3499 k_{max} = 1649
+### Density of current Densest Subgraph is: 227.874
+### 3 remaining rounds
+### rho = 3742 k_{max} = 1867
+### Density of current Densest Subgraph is: 227.874
+### 2 remaining rounds
+### rho = 3838 k_{max} = 2090
+### Density of current Densest Subgraph is: 227.874
+### 1 remaining rounds
+### Total core time: 2.18683
+### Avg core time: 0.218683
+### Application: DensestSubgraph
+### Graph: /home/quanquan/graphs/original/orkut_gbbs
+### Threads: 60
+### n: 3072441
+### m: 234370166
+### Params: -seed = 1
+### Params: -iter = 10
+### Params: -cutoff = 1
+### Params: -option = 3
+### Params: -approx_kcore_base = 2
+### ------------------------------------
+### rho = 5666 k_{max} = 253
+Max core number is: 253
+Pruned graph (n,m) = (71507,26939444)
+### rho = 1746 k_{max} = 253
+### Density of current Densest Subgraph is: 227.867
+### 9 remaining rounds
+### rho = 2265 k_{max} = 504
+### Density of current Densest Subgraph is: 227.873
+### 8 remaining rounds
+### rho = 2589 k_{max} = 737
+### Density of current Densest Subgraph is: 227.873
+### 7 remaining rounds
+### rho = 2858 k_{max} = 949
+### Density of current Densest Subgraph is: 227.873
+### 6 remaining rounds
+### rho = 3000 k_{max} = 1177
+### Density of current Densest Subgraph is: 227.873
+### 5 remaining rounds
+### rho = 3402 k_{max} = 1411
+### Density of current Densest Subgraph is: 227.874
+### 4 remaining rounds
+### rho = 3499 k_{max} = 1649
+### Density of current Densest Subgraph is: 227.874
+### 3 remaining rounds
+### rho = 3742 k_{max} = 1867
+### Density of current Densest Subgraph is: 227.874
+### 2 remaining rounds
+### rho = 3838 k_{max} = 2090
+### Density of current Densest Subgraph is: 227.874
+### 1 remaining rounds
+### Total core time: 2.02305
+### Avg core time: 0.202305
+# time per iter: 3.21314
