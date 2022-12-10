@@ -1,5 +1,5 @@
 Input graph directory: ~/graphs/
-Graphs: clueweb, hyperlinks2012
+Graphs: hyperlinks2012
 Output directory: data_out/
 Numbers of workers: 60, 30, 16, 8, 4, 2, 1
 Iterations: 10
