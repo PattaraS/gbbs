@@ -1,0 +1,130 @@
+### Application: DensestSubgraph
+### Graph: /home/qliu19/graphs/clueweb
+### Threads: 2
+### n: 978408098
+### m: 74744358622
+### Params: -seed = 1
+### Params: -iter = 10
+### Params: -cutoff = 1
+### Params: -option = 0
+### Params: -approx_kcore_base = 2
+### ------------------------------------
+### rho = 4955 k_{max} = 2147483648
+Max core number is: 2147483648
+Pruned graph (n,m) = (13862252,1101131418)
+### rho = 5007 k_{max} = 503
+### Density of current Densest Subgraph is: 252.736
+### 9 remaining rounds
+### rho = 102547 k_{max} = 508
+### Density of current Densest Subgraph is: 253.819
+### 8 remaining rounds
+### rho = 10332 k_{max} = 1006
+### Density of current Densest Subgraph is: 253.819
+### 7 remaining rounds
+### rho = 128714 k_{max} = 1016
+### Density of current Densest Subgraph is: 253.819
+### 6 remaining rounds
+### rho = 14783 k_{max} = 1512
+### Density of current Densest Subgraph is: 253.819
+### 5 remaining rounds
+### rho = 142774 k_{max} = 1524
+### Density of current Densest Subgraph is: 253.819
+### 4 remaining rounds
+### rho = 19034 k_{max} = 2017
+### Density of current Densest Subgraph is: 253.819
+### 3 remaining rounds
+### rho = 152615 k_{max} = 2032
+### Density of current Densest Subgraph is: 253.819
+### 2 remaining rounds
+### rho = 23144 k_{max} = 2521
+### Density of current Densest Subgraph is: 253.819
+### 1 remaining rounds
+### Total core time: 1559.54
+### Avg core time: 155.954
+### Application: DensestSubgraph
+### Graph: /home/qliu19/graphs/clueweb
+### Threads: 2
+### n: 978408098
+### m: 74744358622
+### Params: -seed = 1
+### Params: -iter = 10
+### Params: -cutoff = 1
+### Params: -option = 0
+### Params: -approx_kcore_base = 2
+### ------------------------------------
+### rho = 4956 k_{max} = 2147483648
+Max core number is: 2147483648
+Pruned graph (n,m) = (13776894,1090488948)
+### rho = 5038 k_{max} = 503
+### Density of current Densest Subgraph is: 252.736
+### 9 remaining rounds
+### rho = 101634 k_{max} = 508
+### Density of current Densest Subgraph is: 253.819
+### 8 remaining rounds
+### rho = 10210 k_{max} = 1006
+### Density of current Densest Subgraph is: 253.819
+### 7 remaining rounds
+### rho = 130677 k_{max} = 1016
+### Density of current Densest Subgraph is: 253.819
+### 6 remaining rounds
+### rho = 14485 k_{max} = 1512
+### Density of current Densest Subgraph is: 253.819
+### 5 remaining rounds
+### rho = 143770 k_{max} = 1524
+### Density of current Densest Subgraph is: 253.819
+### 4 remaining rounds
+### rho = 19032 k_{max} = 2015
+### Density of current Densest Subgraph is: 253.819
+### 3 remaining rounds
+### rho = 153964 k_{max} = 2032
+### Density of current Densest Subgraph is: 253.819
+### 2 remaining rounds
+### rho = 23142 k_{max} = 2520
+### Density of current Densest Subgraph is: 253.819
+### 1 remaining rounds
+### Total core time: 1626.54
+### Avg core time: 162.654
+### Application: DensestSubgraph
+### Graph: /home/qliu19/graphs/clueweb
+### Threads: 2
+### n: 978408098
+### m: 74744358622
+### Params: -seed = 1
+### Params: -iter = 10
+### Params: -cutoff = 1
+### Params: -option = 0
+### Params: -approx_kcore_base = 2
+### ------------------------------------
+### rho = 4952 k_{max} = 2147483648
+Max core number is: 2147483648
+Pruned graph (n,m) = (13738970,1086122168)
+### rho = 4988 k_{max} = 503
+### Density of current Densest Subgraph is: 252.736
+### 9 remaining rounds
+### rho = 101423 k_{max} = 508
+### Density of current Densest Subgraph is: 253.819
+### 8 remaining rounds
+### rho = 10338 k_{max} = 1006
+### Density of current Densest Subgraph is: 253.819
+### 7 remaining rounds
+### rho = 128207 k_{max} = 1016
+### Density of current Densest Subgraph is: 253.819
+### 6 remaining rounds
+### rho = 14549 k_{max} = 1511
+### Density of current Densest Subgraph is: 253.819
+### 5 remaining rounds
+### rho = 142293 k_{max} = 1524
+### Density of current Densest Subgraph is: 253.819
+### 4 remaining rounds
+### rho = 18978 k_{max} = 2016
+### Density of current Densest Subgraph is: 253.819
+### 3 remaining rounds
+### rho = 151109 k_{max} = 2032
+### Density of current Densest Subgraph is: 253.819
+### 2 remaining rounds
+### rho = 22910 k_{max} = 2520
+### Density of current Densest Subgraph is: 253.819
+### 1 remaining rounds
+### Total core time: 1623.66
+### Avg core time: 162.366
+# time per iter: 1603.25

@@ -74,7 +74,7 @@ def main():
                             mult_factor, iteration, nw, option, ".out"]
                     read_filename = os.path.join(write_dir, "_".join(out_path_components))
 
-                    best_time = 1000
+                    best_time = 10000
                     best_density = 0
 
                     with open(read_filename, "r") as read_file:
