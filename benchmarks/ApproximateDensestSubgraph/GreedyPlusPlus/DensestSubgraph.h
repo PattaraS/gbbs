@@ -45,6 +45,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   timer densest_timer;
   auto num_iters = T;
 
+  using pii = typename std::pair<uintE, uintE>;
   using W = typename Graph::weight_type;
   typedef symmetric_graph<gbbs::symmetric_vertex, W> sym_graph;
 
@@ -86,18 +87,24 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto D = sequence<uintE>::from_function(
         n, [&](size_t i) { return GA->get_vertex(i).out_degree();
     });
+    
+    auto load_pairs = sequence<pii>::from_function(
+            n, [](size_t i) { return std::make_pair(0,i);});
+    auto get_key = [&] (const pii& p) { return p.first; };
 
     auto first = true;
 
     auto rnd = parlay::random(seed);
 
     while (--T > 0) {
-        auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
+        //auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
+        auto order = integer_sort(load_pairs, get_key);
         auto vtx_to_position = sequence<uintE>(n);
 
         parallel_for(0, n, [&](size_t i) {
-            uintE v = degeneracy_order.A[i];
-            vtx_to_position[v] = i;
+            //uintE v = degeneracy_order.A[i];
+            //vtx_to_position[v] = i;
+            vtx_to_position[order[i].second] = i;
         });
 
         auto density_above = sequence<size_t>(n);
@@ -109,7 +116,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 return pos_u < pos_v;
             };
             density_above[pos_u] = 2 * GA->get_vertex(i).out_neighbors().count(vtx_f);
-            D[i] = D[i] + density_above[pos_u] / 2;
+            //D[i] = D[i] + density_above[pos_u] / 2;
+            load_pairs[i].first = load_pairs[i].first + density_above[pos_u] / 2;
         });
 
         auto density_rev =
@@ -153,6 +161,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             D = sequence<uintE>::from_function(
                 n, [&](size_t i) { return GA->get_vertex(i).out_degree();
             });
+            load_pairs = sequence<pii>::from_function(
+                    n, [](size_t i) { return std::make_pair(0,i);});
 
             std::cout << GA->n << " " << GA->m << std::endl;
             if (option_run == 2)
@@ -166,15 +176,22 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto D = sequence<uintE>::from_function(
         n, [&](size_t i) { return G.get_vertex(i).out_degree();
     });
+
+    auto load_pairs = sequence<pii>::from_function(
+            n, [](size_t i) { return std::make_pair(0,i);});
+    auto get_key = [&] (const pii& p) { return p.first; };
+
     auto rnd = parlay::random(seed);
 
     while (--T > 0) {
-        auto degeneracy_order = DegeneracyOrderWithLoad(G, D, 16, rnd);
+        //auto degeneracy_order = DegeneracyOrderWithLoad(G, D, 16, rnd);
+        auto order = integer_sort(load_pairs, get_key);
         auto vtx_to_position = sequence<uintE>(n);
 
         parallel_for(0, n, [&](size_t i) {
-            uintE v = degeneracy_order.A[i];
-            vtx_to_position[v] = i;
+            //uintE v = degeneracy_order.A[i];
+            //vtx_to_position[v] = i;
+            vtx_to_position[order[i].second] = i;
         });
 
         auto density_above = sequence<size_t>(n);
@@ -186,7 +203,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 return pos_u < pos_v;
             };
             density_above[pos_u] = 2 * G.get_vertex(i).out_neighbors().count(vtx_f);
-            D[i] = D[i] + density_above[pos_u] / 2;
+            //D[i] = D[i] + density_above[pos_u] / 2;
+            load_pairs[i].first = load_pairs[i].first + density_above[pos_u];
         });
 
         auto density_rev =
