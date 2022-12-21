@@ -67,11 +67,13 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
 
+
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
         uintE threshold = ceil(max_core/2);
 
         return (cores[u] >= threshold) && (cores[v] >= threshold);
     };
+
     GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
 
     if (option_run != 2 && option_run != 3)
@@ -89,7 +91,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     });
     
     auto load_pairs = sequence<pii>::from_function(
-            n, [](size_t i) { return std::make_pair(0,i);});
+            n, [&D](size_t i) { return std::make_pair(D[i],i);});
     auto get_key = [&] (const pii& p) { return p.first; };
 
     auto first = true;
@@ -123,6 +125,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         auto density_rev =
             parlay::make_slice(density_above.rbegin(), density_above.rend());
         size_t total_edges = parlay::scan_inplace(density_rev);
+
         /*if (total_edges != GA->m) {
             std::cout << "Assert failed: total_edges should be " << GA->m
                 << " but is: " << total_edges << std::endl;
@@ -147,6 +150,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
+        //if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
         if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
 
             auto cores2 = KCore(*GA, 16);
@@ -158,9 +162,9 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             first = false;
             GA = std::move(GA2);
             n = GA->n;
-            D = sequence<uintE>::from_function(
-                n, [&](size_t i) { return GA->get_vertex(i).out_degree();
-            });
+            //D = sequence<uintE>::from_function(
+                //n, [&](size_t i) { return GA->get_vertex(i).out_degree();
+            //});
             load_pairs = sequence<pii>::from_function(
                     n, [](size_t i) { return std::make_pair(0,i);});
 
@@ -178,14 +182,21 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     });
 
     auto load_pairs = sequence<pii>::from_function(
-            n, [](size_t i) { return std::make_pair(0,i);});
+            n, [](size_t i) { return std::make_pair(D[i],i);});
     auto get_key = [&] (const pii& p) { return p.first; };
 
     auto rnd = parlay::random(seed);
 
+    auto first_sort = true;
+
     while (--T > 0) {
         //auto degeneracy_order = DegeneracyOrderWithLoad(G, D, 16, rnd);
         auto order = integer_sort(load_pairs, get_key);
+        if (first_sort) {
+            first_sort = false;
+            auto load_pairs = sequence<pii>::from_function(
+                n, [](size_t i) { return std::make_pair(0,i);});
+        }
         auto vtx_to_position = sequence<uintE>(n);
 
         parallel_for(0, n, [&](size_t i) {
