@@ -94,6 +94,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             n, [&D](size_t i) { return std::make_pair(D[i],i);});
     auto get_key = [&] (const pii& p) { return p.first; };
 
+    auto first_sort = true;
+
     auto first = true;
 
     auto rnd = parlay::random(seed);
@@ -102,6 +104,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         //auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
         auto order = integer_sort(load_pairs, get_key);
         auto vtx_to_position = sequence<uintE>(n);
+        if (first_sort) {
+            first_sort = false;
+            load_pairs = sequence<pii>::from_function(
+                    n, [&D](size_t i) { return std::make_pair(0,i);});
+        }
 
         parallel_for(0, n, [&](size_t i) {
             //uintE v = degeneracy_order.A[i];
@@ -152,7 +159,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
         //if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
         if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
-
+            first = false;
             auto cores2 = KCore(*GA, 16);
             auto km = (uintE) ceil(max_density/2);
             auto predicate2 = [&cores2, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
@@ -182,7 +189,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     });
 
     auto load_pairs = sequence<pii>::from_function(
-            n, [](size_t i) { return std::make_pair(D[i],i);});
+            n, [&D](size_t i) { return std::make_pair(D[i],i);});
     auto get_key = [&] (const pii& p) { return p.first; };
 
     auto rnd = parlay::random(seed);
@@ -194,7 +201,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         auto order = integer_sort(load_pairs, get_key);
         if (first_sort) {
             first_sort = false;
-            auto load_pairs = sequence<pii>::from_function(
+            load_pairs = sequence<pii>::from_function(
                 n, [](size_t i) { return std::make_pair(0,i);});
         }
         auto vtx_to_position = sequence<uintE>(n);
