@@ -42,6 +42,7 @@ double DensestSubgraph_runner(Graph& G, commandLine P) {
   size_t iter = P.getOptionIntValue("-iter", 5);
   double cutoff = P.getOptionDoubleValue("-cutoff", 1);
   int option_run = P.getOptionIntValue("-option", 0);
+  bool use_sorting = P.getOption("-use_sorting");
   double approx_kcore_base = P.getOptionDoubleValue("-approx_kcore_base", 1.05);
   std::cout << "### Application: DensestSubgraph" << std::endl;
   std::cout << "### Graph: " << P.getArgument(0) << std::endl;
@@ -60,7 +61,8 @@ double DensestSubgraph_runner(Graph& G, commandLine P) {
   timer t;
   t.start();
 
-  GreedyPlusPlusDensestSubgraph(G, seed, iter, cutoff, option_run, approx_kcore_base);
+  GreedyPlusPlusDensestSubgraph(G, seed, iter, cutoff, option_run, approx_kcore_base, use_sorting
+          );
   double tt = t.stop();
 
   //std::cout << "### Running Time: " << tt << std::endl;
