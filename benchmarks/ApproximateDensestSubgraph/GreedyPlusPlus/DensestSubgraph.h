@@ -52,6 +52,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   double max_density = 0.0;
   auto total_densest_time = 0.0;
 
+  size_t max_width = 0;
+
   std::unique_ptr<sym_graph> GA;
   uintE max_core = 0;
   if (option_run != 4) {
@@ -127,6 +129,9 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             density_above[pos_u] = 2 * GA->get_vertex(i).out_neighbors().count(vtx_f);
             //D[i] = D[i] + density_above[pos_u] / 2;
             load_pairs[i].first = load_pairs[i].first + density_above[pos_u] / 2;
+            if (density_above[pos_u] > max_width) {
+                max_width = density_above[pos_u];
+            }
         });
 
         auto density_rev =
@@ -153,6 +158,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
+        std::cout << "### Empirical width so far is: " << max_width / 2 << std::endl;
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
 
