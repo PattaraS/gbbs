@@ -41,7 +41,7 @@ namespace gbbs {
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
-        int option_run = 0, double approx_kcore_base = 1.05) {
+        int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false) {
   timer densest_timer;
   auto num_iters = T;
 
@@ -102,21 +102,28 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     auto rnd = parlay::random(seed);
 
+    auto vtx_to_position = sequence<uintE>(n);
+
     while (--T > 0) {
-        //auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
-        auto order = integer_sort(load_pairs, get_key);
-        auto vtx_to_position = sequence<uintE>(n);
-        if (first_sort) {
-            first_sort = false;
-            load_pairs = sequence<pii>::from_function(
-                    n, [&D](size_t i) { return std::make_pair(0,i);});
+        
+        if (use_sorting) {
+            auto order = integer_sort(load_pairs, get_key);
+            if (first_sort) {
+                first_sort = false;
+                load_pairs = sequence<pii>::from_function(
+                        n, [&D](size_t i) { return std::make_pair(0,i);});
+            }
+            parallel_for(0, n, [&](size_t i) {
+                vtx_to_position[order[i].second] = i;
+            });
+        } else {
+            auto degeneracy_order = DegeneracyOrderWithLoad(*GA, D, 16, rnd);
+            parallel_for(0, n, [&](size_t i) {
+                uintE v = degeneracy_order.A[i];
+                vtx_to_position[v] = i;
+            });
         }
 
-        parallel_for(0, n, [&](size_t i) {
-            //uintE v = degeneracy_order.A[i];
-            //vtx_to_position[v] = i;
-            vtx_to_position[order[i].second] = i;
-        });
 
         auto density_above = sequence<size_t>(n);
 
@@ -127,7 +134,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 return pos_u < pos_v;
             };
             density_above[pos_u] = 2 * GA->get_vertex(i).out_neighbors().count(vtx_f);
-            //D[i] = D[i] + density_above[pos_u] / 2;
+            D[i] = D[i] + density_above[pos_u] / 2;
             load_pairs[i].first = load_pairs[i].first + density_above[pos_u] / 2;
             if (density_above[pos_u] > max_width) {
                 max_width = density_above[pos_u];
@@ -163,7 +170,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
-        //if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
         if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
             first = false;
             auto cores2 = KCore(*GA, 16);
@@ -175,11 +181,15 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             first = false;
             GA = std::move(GA2);
             n = GA->n;
-            //D = sequence<uintE>::from_function(
-                //n, [&](size_t i) { return GA->get_vertex(i).out_degree();
-            //});
-            load_pairs = sequence<pii>::from_function(
-                    n, [](size_t i) { return std::make_pair(0,i);});
+            if (use_sorting) {
+                load_pairs = sequence<pii>::from_function(
+                        n, [](size_t i) { return std::make_pair(0,i);});
+            } else {
+                D = sequence<uintE>::from_function(
+                    n, [&](size_t i) { return GA->get_vertex(i).out_degree();
+                });
+            }
+            vtx_to_position = sequence<uintE>(n);
 
             std::cout << GA->n << " " << GA->m << std::endl;
             if (option_run == 2)
@@ -202,21 +212,26 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     auto first_sort = true;
 
-    while (--T > 0) {
-        //auto degeneracy_order = DegeneracyOrderWithLoad(G, D, 16, rnd);
-        auto order = integer_sort(load_pairs, get_key);
-        if (first_sort) {
-            first_sort = false;
-            load_pairs = sequence<pii>::from_function(
-                n, [](size_t i) { return std::make_pair(0,i);});
-        }
-        auto vtx_to_position = sequence<uintE>(n);
+    auto vtx_to_position = sequence<uintE>(n);
 
-        parallel_for(0, n, [&](size_t i) {
-            //uintE v = degeneracy_order.A[i];
-            //vtx_to_position[v] = i;
-            vtx_to_position[order[i].second] = i;
-        });
+    while (--T > 0) {
+        if (use_sorting) {
+            auto order = integer_sort(load_pairs, get_key);
+            if (first_sort) {
+                first_sort = false;
+                load_pairs = sequence<pii>::from_function(
+                        n, [&D](size_t i) { return std::make_pair(0,i);});
+            }
+            parallel_for(0, n, [&](size_t i) {
+                vtx_to_position[order[i].second] = i;
+            });
+        } else {
+            auto degeneracy_order = DegeneracyOrderWithLoad(G, D, 16, rnd);
+            parallel_for(0, n, [&](size_t i) {
+                uintE v = degeneracy_order.A[i];
+                vtx_to_position[v] = i;
+            });
+        }
 
         auto density_above = sequence<size_t>(n);
 
@@ -227,7 +242,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 return pos_u < pos_v;
             };
             density_above[pos_u] = 2 * G.get_vertex(i).out_neighbors().count(vtx_f);
-            //D[i] = D[i] + density_above[pos_u] / 2;
+            D[i] = D[i] + density_above[pos_u] / 2;
             load_pairs[i].first = load_pairs[i].first + density_above[pos_u];
         });
 
