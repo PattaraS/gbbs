@@ -71,7 +71,8 @@ def main():
                     out_path_components = ["ParallelDensestSubgraph", filename,
                             mult_factor, iteration, nw, option, ".out"]
                     out_filename = os.path.join(write_dir, "_".join(out_path_components))
-                    ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
+                    # ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
+                    ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s " " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
                     print(ss)
                     out = shellGetOutput(ss, 120)
                     appendToFile(out, out_filename)
