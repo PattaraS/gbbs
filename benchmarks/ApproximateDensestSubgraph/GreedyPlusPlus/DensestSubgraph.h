@@ -54,6 +54,14 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
   size_t max_width = 0;
 
+  size_t n = G.n;
+
+  auto composed_map = sequence<uintE>::from_function(n, [](size_t i) {return i;});
+
+  auto composeMap = [](sequence<uintE>& base_map, sequence<uintE>& added_map) {
+      return sequence<uintE>::from_function( added_map.size(), [&](size_t i) { return base_map[added_map[i]]; });
+  };
+
   std::unique_ptr<sym_graph> GA;
   uintE max_core = 0;
   if (option_run != 4) {
@@ -69,14 +77,15 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
 
-
+    uintE core_threshold = ceil(max_core/2);
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-        uintE threshold = ceil(max_core/2);
+        //uintE threshold = ceil(max_core/2);
 
-        return (cores[u] >= threshold) && (cores[v] >= threshold);
+        return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
     };
-
-    GA = std::make_unique<sym_graph>(inducedSubgraph(G, predicate));
+    auto induced_subgraph_with_mapping = inducedSubgraph(G, predicate, true);
+    GA = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+    composed_map = composeMap(composed_map, std::get<1>(induced_subgraph_with_mapping));
 
     if (option_run != 2 && option_run != 3)
         total_densest_time += densest_timer.stop();
@@ -86,7 +95,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     if (option_run != 2)
         densest_timer.start();
 
-    size_t n = GA->n;
+    n = GA->n;
 
     auto D = sequence<uintE>::from_function(
         n, [&](size_t i) { return GA->get_vertex(i).out_degree();
@@ -172,14 +181,17 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### " << T << " remaining rounds" << std::endl;
 
 
-        if ((option_run < 3) && first && max_density/2.0 > (max_core/2) * cutoff_mult) {
-            first = false;
-            auto cores2 = KCore(*GA, 16);
+        if ((option_run < 3) && first && max_density/2.0 > core_threshold * cutoff_mult) {
+            //first = false;
+            //auto cores2 = KCore(*GA, 16);
             auto km = (uintE) ceil(max_density/2);
-            auto predicate2 = [&cores2, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
-                return (cores2[u] >= km && cores2[v] >= km);
+            auto predicate2 = [&cores, &composed_map, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
+                return (cores[composed_map[u]] >= km && cores[composed_map[v]] >= km);
             };
-            std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(inducedSubgraph(*GA, predicate2));
+            core_threshold = km;
+            induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate2, true);
+            std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+            composed_map = composeMap( composed_map, std::get<1>(induced_subgraph_with_mapping) );
             first = false;
             GA = std::move(GA2);
             n = GA->n;
