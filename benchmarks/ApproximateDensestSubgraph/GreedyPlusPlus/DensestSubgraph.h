@@ -36,7 +36,7 @@ namespace gbbs {
 // option_run parameters:
 //  0: approximate k-core first round, ceil of approximate density second run
 //  1: exact k-core first round, ceil of approximate density second run
-//  2: outputs running time of algorithm when run on ceil of approximate density
+//  2: outputs running time of algorithm when run on ceil of approximate density THIS OPTION IS OBSELETED 
 //  3: outputs running time of algorithm when only (max k)/2 core
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
@@ -44,6 +44,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false) {
   timer densest_timer;
   auto num_iters = T;
+
+  //char buff[100]; // a buffer for sprintf
 
   using pii = typename std::pair<uintE, uintE>;
   using W = typename Graph::weight_type;
@@ -87,10 +89,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     GA = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
     composed_map = composeMap(composed_map, std::get<1>(induced_subgraph_with_mapping));
 
-    if (option_run != 2 && option_run != 3)
+    if (option_run != 2)
         total_densest_time += densest_timer.stop();
 
     std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
+    std::cout << std::setprecision(15) << std::fixed << "### Initialization Time: " << total_densest_time << std::endl;
 
     if (option_run != 2)
         densest_timer.start();
@@ -179,6 +182,14 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
+        auto round_time = densest_timer.stop();
+        //sprintf(buff,"%.6lf", round_time);
+        //auto formatted_time = std::string(buff);
+        //std::cout << "### MWU iteration time: " << formatted_time << std::endl;
+        std::cout << "### MWU iteration time: " << round_time << std::endl;
+        total_densest_time += round_time;
+        std::cout << "### Cumulative time: " << total_densest_time << std::endl;
+        densest_timer.start();
 
 
         if ((option_run < 3) && first && max_density/2.0 > core_threshold * cutoff_mult) {
@@ -285,9 +296,16 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 << std::endl;
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
+        auto round_time = densest_timer.stop(); // 42e-05
+        //sprintf(buff,"%.6lf", round_time);
+        //auto formatted_time = std::string(buff);
+        //std::cout << "### MWU iteration time: " << formatted_time << std::endl;
+        std::cout << "### MWU iteration time: " << round_time << std::endl;
+        total_densest_time += round_time;
+        std::cout << "### Cumulative time: " << total_densest_time << std::endl;
+        densest_timer.start();
     }
 
-    total_densest_time += densest_timer.stop();
   }
 
   std::cout << "### Total core time: " << total_densest_time << std::endl;
