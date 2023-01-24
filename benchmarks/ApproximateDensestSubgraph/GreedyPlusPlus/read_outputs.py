@@ -61,17 +61,20 @@ def main():
         options = params.copy()
       elif line.startswith("Compressed"):
         compressed = params.copy()
+      elif line.startswith("Peeling Options"):
+        peeling_options = params.copy()
 
   # Setup other parameters
   program_dir = "../benchmarks/"
   empty = "../benchmarks/EdgeOrientation/ParallelLDS/empty_h"
   for file_idx, filename in enumerate(files):
     for mult_factor in mult_factors:
-        for iteration in iterations:
-            for nw in num_workers:
-                for option in options:
+      for iteration in iterations:
+        for nw in num_workers:
+          for peeling in peeling_options:
+            for option in options:
                     out_path_components = ["ParallelDensestSubgraph", filename,
-                            mult_factor, iteration, nw, option, ".out"]
+                            mult_factor, iteration, nw, peeling, option, ".out"]
                     read_filename = os.path.join(write_dir, "_".join(out_path_components))
 
                     best_time = 10000
@@ -90,6 +93,7 @@ def main():
 
                     print(str(filename), end = ",")
                     print(str(iteration), end = ",")
+                    print(str(peeling), end= ",")
                     print(str(optionToType(int(option))), end = ",")
                     print(str(nw), end = ",")
                     print(str(best_time), end = ",")

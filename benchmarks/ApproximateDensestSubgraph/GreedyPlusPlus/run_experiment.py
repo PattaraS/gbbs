@@ -61,21 +61,27 @@ def main():
         options = params.copy()
       elif line.startswith("Compressed"):
         compressed = params.copy()
+      elif line.startswith("Peeling Options"):
+        peeling_options = params.copy()
 
   # Setup other parameters
   for file_idx, filename in enumerate(files):
     for mult_factor in mult_factors:
-        for iteration in iterations:
-            for nw in num_workers:
-                for option in options:
-                    out_path_components = ["ParallelDensestSubgraph", filename,
-                            mult_factor, iteration, nw, option, ".out"]
-                    out_filename = os.path.join(write_dir, "_".join(out_path_components))
-                    # ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
-                    ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s " " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
-                    print(ss)
-                    out = shellGetOutput(ss, 120)
-                    appendToFile(out, out_filename)
+      for iteration in iterations:
+        for nw in num_workers:
+          for peeling in peeling_options:
+            peeling_suffix =''
+            for option in options:
+              out_path_components = ["ParallelDensestSubgraph", filename,
+                  mult_factor, iteration, nw, peeling, option, ".out"]
+              if peeling == 'Sorting':
+                peeling_suffix= ' -use_sorting '
+              out_filename = os.path.join(write_dir, "_".join(out_path_components))
+                  # ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
+              ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s " " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + peeling_suffix + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
+              print(ss)
+              out = shellGetOutput(ss, 120)
+              appendToFile(out, out_filename)
 
 if __name__ == "__main__":
   main()
