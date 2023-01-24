@@ -64,6 +64,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
       return sequence<uintE>::from_function( added_map.size(), [&](size_t i) { return base_map[added_map[i]]; });
   };
 
+  std::cout << std::setprecision(15) << std::fixed;
+
   std::unique_ptr<sym_graph> GA;
   uintE max_core = 0;
   if (option_run != 4) {
@@ -93,7 +95,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         total_densest_time += densest_timer.stop();
 
     std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
-    std::cout << std::setprecision(15) << std::fixed << "### Initialization Time: " << total_densest_time << std::endl;
+    //std::cout << std::setprecision(15) << std::fixed << "### Initialization Time: " << total_densest_time << std::endl;
+    std::cout << "### Initialization Time: " << total_densest_time << std::endl;
 
     if (option_run != 2)
         densest_timer.start();
