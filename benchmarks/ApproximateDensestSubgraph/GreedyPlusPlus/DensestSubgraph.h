@@ -64,6 +64,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
       return sequence<uintE>::from_function( added_map.size(), [&](size_t i) { return base_map[added_map[i]]; });
   };
 
+  std::cout << std::setprecision(15) << std::fixed;
+
   std::unique_ptr<sym_graph> GA;
   uintE max_core = 0;
   if (option_run != 4) {
@@ -93,7 +95,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         total_densest_time += densest_timer.stop();
 
     std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
-    std::cout << std::setprecision(15) << std::fixed << "### Initialization Time: " << total_densest_time << std::endl;
+    //std::cout << std::setprecision(15) << std::fixed << "### Initialization Time: " << total_densest_time << std::endl;
+    std::cout << "### Initialization Time: " << total_densest_time << std::endl;
 
     if (option_run != 2)
         densest_timer.start();
@@ -191,9 +194,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### Cumulative time: " << total_densest_time << std::endl;
         densest_timer.start();
 
-
-        if ((option_run < 3) && first && max_density/2.0 > core_threshold * cutoff_mult) {
-            //first = false;
+        //std::cout << "(DEBUG): " << max_density << " " << core_threshold << std::endl;
+        if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult) {
             //auto cores2 = KCore(*GA, 16);
             auto km = (uintE) ceil(max_density/2);
             auto predicate2 = [&cores, &composed_map, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
@@ -203,7 +205,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate2, true);
             std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
             composed_map = composeMap( composed_map, std::get<1>(induced_subgraph_with_mapping) );
-            first = false;
             GA = std::move(GA2);
             n = GA->n;
             if (use_sorting) {
@@ -216,9 +217,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             }
             vtx_to_position = sequence<uintE>(n);
 
-            std::cout << GA->n << " " << GA->m << std::endl;
-            if (option_run == 2)
-                densest_timer.start();
+            //std::cout << GA->n << " " << GA->m << std::endl;
+            std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
+            //if (option_run == 2)
+                //densest_timer.start();
         }
     }
     total_densest_time += densest_timer.stop();
