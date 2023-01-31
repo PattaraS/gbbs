@@ -186,7 +186,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
           size_t pos_max = max_it - density_seq.begin();
           auto predicate_DSG = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
             //uintE threshold = ceil(max_core/2);
-            return vtx_to_position[u] >= pos_max && vtx_to_position[v] >= pos_max;
+            return vtx_to_position[u] >= pos_max && vtx_to_position[v] >= pos_max && u!= v;
             //return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
           };
           auto induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate_DSG, false);
