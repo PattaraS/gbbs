@@ -24,6 +24,7 @@
 #pragma once
 
 #include "benchmarks/KCore/JulienneDBS17/KCore.h"
+#include "benchmarks/Connectivity/BFSCC/Connectivity.h"
 #include "gbbs/gbbs.h"
 
 namespace gbbs {
@@ -41,7 +42,7 @@ namespace gbbs {
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
-        int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false) {
+        int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false, bool obtain_dsg = false) {
   timer densest_timer;
   auto num_iters = T;
 
@@ -66,7 +67,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
   std::cout << std::setprecision(15) << std::fixed;
 
-  std::unique_ptr<sym_graph> GA;
+  std::unique_ptr<sym_graph> GA, DSG;
   uintE max_core = 0;
   if (option_run != 4) {
     if (option_run != 2 && option_run != 3)
@@ -118,7 +119,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto rnd = parlay::random(seed);
 
     auto vtx_to_position = sequence<uintE>(n);
-
+    
     while (--T > 0) {
 
         size_t round_width = 0;
@@ -140,7 +141,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 vtx_to_position[v] = i;
             });
         }
-
 
         auto density_above = sequence<size_t>(n);
 
@@ -179,6 +179,20 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             rem = n - i;
             return static_cast<double>(dens) / static_cast<double>(rem);
         });
+        auto max_it = parlay::max_element(density_seq);
+        std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
+        
+        if (obtain_dsg && ((*max_it) > max_density) ) {
+          size_t pos_max = max_it - density_seq.begin();
+          auto predicate_DSG = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+            //uintE threshold = ceil(max_core/2);
+            return vtx_to_position[u] >= pos_max && vtx_to_position[v] >= pos_max;
+            //return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
+          };
+          auto induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate_DSG, false);
+          DSG= std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+        }
+
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
@@ -312,6 +326,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
   std::cout << "### Total core time: " << total_densest_time << std::endl;
   std::cout << "### Avg core time: " << total_densest_time / num_iters << std::endl;
+  if (obtain_dsg && DSG) {
+    std::cout << "DESNSEST SUBGRAPH nm: " << DSG->n << " " << DSG->m << std::endl;
+    auto parents = gbbs::bfs_cc::CC(*DSG);
+    auto unique_parents = unique(parents);
+    std::cout << "CC counts: " << unique_parents.size() << std::endl;
+  }
   return max_density;
 }
 
