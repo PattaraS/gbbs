@@ -179,7 +179,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             rem = n - i;
             return static_cast<double>(dens) / static_cast<double>(rem);
         });
-        auto max_it = parlay::max_element(density_seq);
+        //auto max_it = parlay::max_element(density_seq);
+        auto max_it = parlay::max_element(density_seq, [&] (const double& a, const double& b) {
+            return floor(a) < floor(b);
+            });
         std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
         
         if (obtain_dsg && ((*max_it) > max_density) ) {
@@ -333,7 +336,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   std::cout << "### Total core time: " << total_densest_time << std::endl;
   std::cout << "### Avg core time: " << total_densest_time / num_iters << std::endl;
   if (obtain_dsg && DSG) {
-    std::cout << "DESNSEST SUBGRAPH nm: " << DSG->n << " " << DSG->m << std::endl;
+    std::cout << "DESNSEST SUBGRAPH nm: " << DSG->n << " " << DSG->m/2 << " " << (1.0*DSG->m/DSG->n/2) <<  std::endl;
     auto parents = gbbs::bfs_cc::CC(*DSG);
     auto unique_parents = unique(parents);
     std::cout << "CC counts: " << unique_parents.size() << std::endl;

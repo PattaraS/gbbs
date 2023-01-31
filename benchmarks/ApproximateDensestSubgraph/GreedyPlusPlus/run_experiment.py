@@ -37,7 +37,7 @@ def appendToFile(out, filename):
 def main():
   # Read parameters from setup file
   n = len(sys.argv)
-  for idx in range(1, n + 1):
+  for idx in range(1, n):
     print(f"Processing {sys.argv[idx]}")
     with open(sys.argv[idx]) as parameters_file:
       for line in parameters_file:
@@ -81,7 +81,7 @@ def main():
                   peeling_suffix= ' -use_sorting '
                 out_filename = os.path.join(write_dir, "_".join(out_path_components))
                     # ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
-                ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s " " -m " + str(compressed[0]) + " -rounds " + str(rounds[0]) + " -iter " + iteration + peeling_suffix + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
+                ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s " " -m " + str(compressed[0]) + " -rounds " + str(rounds[0]) + " -iter " + iteration + peeling_suffix + " -option " + option + " -obtain_dsg " + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
                 print(ss)
                 out = shellGetOutput(ss, 120)
                 appendToFile(out, out_filename)
