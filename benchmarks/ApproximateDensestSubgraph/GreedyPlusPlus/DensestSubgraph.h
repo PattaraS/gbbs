@@ -256,6 +256,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto vtx_to_position = sequence<uintE>(n);
 
     while (--T > 0) {
+        size_t round_width = 0;
+
         if (use_sorting) {
             auto order = integer_sort(load_pairs, get_key);
             if (first_sort) {
@@ -285,7 +287,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             density_above[pos_u] = 2 * G.get_vertex(i).out_neighbors().count(vtx_f);
             D[i] = D[i] + density_above[pos_u] / 2;
             load_pairs[i].first = load_pairs[i].first + density_above[pos_u];
+            round_width = std::max(round_width, density_above[pos_u]);
         });
+
+        max_width = std::max(max_width, round_width);
 
         auto density_rev =
             parlay::make_slice(density_above.rbegin(), density_above.rend());
@@ -310,6 +315,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
+        std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
         auto round_time = densest_timer.stop(); // 42e-05
