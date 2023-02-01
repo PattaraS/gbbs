@@ -66,6 +66,24 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   };
 
   std::cout << std::setprecision(15) << std::fixed;
+  
+  auto find_delta_first = [](Graph& G) {
+    auto degs = sequence<uintE>::from_function(G.n, 
+        [&](size_t i) { 
+            return G.get_vertex(i).out_degree();
+        });
+    return *parlay::max_element(degs);
+  };
+
+  std::cout << "# Initial Delta(G): " << find_delta_first(G) << std::endl;
+
+  auto find_delta = [](sym_graph& G) {
+    auto degs = sequence<uintE>::from_function(G.n, 
+        [&](size_t i) { 
+            return G.get_vertex(i).out_degree();
+        });
+    return *parlay::max_element(degs);
+  };
 
   std::unique_ptr<sym_graph> GA, DSG;
   uintE max_core = 0;
@@ -91,6 +109,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto induced_subgraph_with_mapping = inducedSubgraph(G, predicate, true);
     GA = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
     composed_map = composeMap(composed_map, std::get<1>(induced_subgraph_with_mapping));
+    std::cout << "# k/2-core Delta(G): " << find_delta(*GA) << std::endl;
 
     if (option_run != 2)
         total_densest_time += densest_timer.stop();
@@ -181,7 +200,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         });
         //auto max_it = parlay::max_element(density_seq);
         auto max_it = parlay::max_element(density_seq, [&] (const double& a, const double& b) {
-            return floor(a) < floor(b);
+            return a<b;
             });
         std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
         
@@ -236,6 +255,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
             //std::cout << GA->n << " " << GA->m << std::endl;
             std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
+            std::cout << "# " << core_threshold<< "-core Delta(G): " << find_delta(*GA) << std::endl;
             //if (option_run == 2)
                 //densest_timer.start();
         }
