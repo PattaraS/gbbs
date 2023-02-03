@@ -82,7 +82,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
 
-    uintE core_threshold = ceil(max_core/2);
+    uintE core_threshold = ceil(max_core/2.0);
+    if (option_run == 0) {
+        core_threshold = ceil(max_core/2.0/approx_kcore_base);
+    }
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
         //uintE threshold = ceil(max_core/2);
 
