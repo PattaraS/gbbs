@@ -37,7 +37,8 @@ namespace gbbs {
 // option_run parameters:
 //  0: approximate k-core first round, ceil of approximate density second run
 //  1: exact k-core first round, ceil of approximate density second run
-//  2: outputs running time of algorithm when run on ceil of approximate density THIS OPTION IS OBSELETED 
+//  2: outputs running time of algorithm when run on ceil of approximate density THIS OPTION IS OBSOLETED
+//  TODO: remove unused options
 //  3: outputs running time of algorithm when only (max k)/2 core
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
@@ -58,18 +59,21 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   size_t max_width = 0;
 
   size_t n = G.n;
+  size_t m = G.m;
 
   auto composed_map = sequence<uintE>::from_function(n, [](size_t i) {return i;});
-
+  // A function to compose two index-maps together
   auto composeMap = [](sequence<uintE>& base_map, sequence<uintE>& added_map) {
       return sequence<uintE>::from_function( added_map.size(), [&](size_t i) { return base_map[added_map[i]]; });
   };
 
+  // Set floating-point output precision
   std::cout << std::setprecision(15) << std::fixed;
-  
+
+  // A function to find max degree - a bit hacky because of interface.
   auto find_delta_first = [](Graph& G) {
-    auto degs = sequence<uintE>::from_function(G.n, 
-        [&](size_t i) { 
+    auto degs = sequence<uintE>::from_function(G.n,
+        [&](size_t i) {
             return G.get_vertex(i).out_degree();
         });
     return *parlay::max_element(degs);
@@ -77,9 +81,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
   std::cout << "# Initial Delta(G): " << find_delta_first(G) << std::endl;
 
+  // A function to find max degree.
+  // TODO: we don't need two functions for this. Either convert the graph or use some template.
   auto find_delta = [](sym_graph& G) {
-    auto degs = sequence<uintE>::from_function(G.n, 
-        [&](size_t i) { 
+    auto degs = sequence<uintE>::from_function(G.n,
+        [&](size_t i) {
             return G.get_vertex(i).out_degree();
         });
     return *parlay::max_element(degs);
@@ -100,15 +106,98 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
 
+    // TODO: To implement a better subgraph function we will use a prefix array.
+    // More precisely, we sort vertices by their core numbers in desc order.
+    // Then to get a k-core, we find the largest index such that core(v)>=k.
+    // We then shrink graphs into those vertices.
+    // To implement this, we also have to think about how to shrink edges.
+    // Notice that, after renumbering, we can decide in O(1) if we want to keep an edge.
+    // We can also sort edges by min(core(u),core(v)) desc. This way, we also need prefix set of edges.
+    // %%%%%%%%
+    sequence<pii> vertices_with_core_number = sequence<pii>::from_function(n,
+            [&cores](size_t i) ->pii {
+                return {i,cores[i]};
+            });
+
+    // sort vertices by core numbers
+    integer_sort_inplace(vertices_with_core_number, [&](const pii&p) {return -p.second;});
+
+    auto edges = G.edges();
+    integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE,W>& e){
+            return -std::min(cores[std::get<0>(e)],cores[std::get<1>(e)]);
+            });
+    //for (size_t i =0 ; i < 1000 ; ++ i ) std::cout << std::get<0>(edges[i]) << " " << std::get<1>(edges[i]) << " " << cores[std::get<0>(edges[i])] << " " <<cores[std::get<1>(edges[i])] << std::endl;
+    //std::cout <<"EDGES COUNT: " << edges.size() << std::endl;
+
+    /* TESTED
+    parallel_for(0, edges.size()-1, [&](size_t i){
+        if(std::min(cores[std::get<0>(edges[i])],cores[std::get<1>(edges[i])]) 
+            < std::min(cores[std::get<0>(edges[i+1])],cores[std::get<1>(edges[i+1])])) {
+          std::cout << "Assert failed sorting" << std::endl;
+          exit(0);
+
+        }});
+
+
+    parallel_for(0, n, [&](size_t i) {
+        if (i < n-1 && vertices_with_core_number[i].second <vertices_with_core_number[i+1].second) {
+            std::cout << "Assert failed sorting" << std::endl;
+            exit(0);
+        }
+    });
+    */
+
+    // renumbering vertices & edges and create a new graph
+
+    sequence<uintE> new_vertex_ids = sequence<uintE>(n);
+    parallel_for(0, n, [&](size_t i) {
+        new_vertex_ids[vertices_with_core_number[i].first] = i;
+        });
+  
+    parallel_for(0,n, [&](size_t i){
+        cores[i] = vertices_with_core_number[i].second;
+        });
+    parallel_for(0,m, [&](size_t i) {
+        std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
+        std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
+        });
+
+    auto curN = n,curM = m ;
+    
+    auto obtain_core = [&](uintE k) {
+      auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
+      vertices_with_core_number.pop_tail(shell);
+      curN = vertices_with_core_number.size();
+      //for (size_t i =0 ; i < 1000 ; ++ i ) std::cout << std::get<0>(edges[i]) << " " << std::get<1>(edges[i]) << " " << cores[std::get<0>(edges[i])] << " " <<cores[std::get<1>(edges[i])] << std::endl;
+
+      // Somehow, sym_graph_from_edges alter the ordering of edges
+      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE,W>& e){
+          return -std::min(cores[std::get<0>(e)],cores[std::get<1>(e)]);
+          });
+      auto non_core_edges = parlay::find_if_not(edges, [&](const std::tuple<uintE, uintE, W> &e) {
+          return (std::get<0>(e) < curN) && (std::get<1>(e) < curN);
+          });
+      edges.pop_tail(non_core_edges);
+      curM = edges.size();
+      std::cout << "CURN CURM" << curN << " " << curM << std::endl;
+      return sym_graph_from_edges(edges, curN);
+    };
+
+    // %%%%%%%%
+
+
+
+    // TODO: fix core threshold for approx-kcore.
     uintE core_threshold = ceil(max_core/2);
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
         //uintE threshold = ceil(max_core/2);
 
         return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
     };
-    auto induced_subgraph_with_mapping = inducedSubgraph(G, predicate, true);
-    GA = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
-    composed_map = composeMap(composed_map, std::get<1>(induced_subgraph_with_mapping));
+    //auto induced_subgraph_with_mapping = inducedSubgraph(G, predicate, true);
+    //GA = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+    GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
+    //composed_map = composeMap(composed_map, std::get<1>(induced_subgraph_with_mapping));
     std::cout << "# k/2-core Delta(G): " << find_delta(*GA) << std::endl;
 
     if (option_run != 2)
@@ -126,7 +215,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto D = sequence<uintE>::from_function(
         n, [&](size_t i) { return GA->get_vertex(i).out_degree();
     });
-    
+
     auto load_pairs = sequence<pii>::from_function(
             n, [&D](size_t i) { return std::make_pair(D[i],i);});
     auto get_key = [&] (const pii& p) { return p.first; };
@@ -138,11 +227,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto rnd = parlay::random(seed);
 
     auto vtx_to_position = sequence<uintE>(n);
-    
+
     while (--T > 0) {
 
         size_t round_width = 0;
-        
+
         if (use_sorting) {
             auto order = integer_sort(load_pairs, get_key);
             if (first_sort) {
@@ -203,17 +292,17 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             return a<b;
             });
         std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
-        
-        if (obtain_dsg && ((*max_it) > max_density) ) {
-          size_t pos_max = max_it - density_seq.begin();
-          auto predicate_DSG = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-            //uintE threshold = ceil(max_core/2);
-            return vtx_to_position[u] >= pos_max && vtx_to_position[v] >= pos_max && u!= v;
-            //return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
-          };
-          auto induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate_DSG, false);
-          DSG= std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
-        }
+
+        //if (obtain_dsg && ((*max_it) > max_density) ) {
+          //size_t pos_max = max_it - density_seq.begin();
+          //auto predicate_DSG = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
+            ////uintE threshold = ceil(max_core/2);
+            //return vtx_to_position[u] >= pos_max && vtx_to_position[v] >= pos_max && u!= v;
+            ////return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
+          //};
+          //auto induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate_DSG, false);
+          //DSG= std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+        //}
 
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
@@ -238,18 +327,21 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
                 return (cores[composed_map[u]] >= km && cores[composed_map[v]] >= km);
             };
             core_threshold = km;
-            induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate2, true);
-            std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
-            composed_map = composeMap( composed_map, std::get<1>(induced_subgraph_with_mapping) );
-            GA = std::move(GA2);
+            //induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate2, true);
+            //std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+            //std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+            //composed_map = composeMap( composed_map, std::get<1>(induced_subgraph_with_mapping) );
+            GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
             n = GA->n;
             if (use_sorting) {
-                load_pairs = sequence<pii>::from_function(
-                        n, [](size_t i) { return std::make_pair(0,i);});
+                //load_pairs = sequence<pii>::from_function(
+                        //n, [](size_t i) { return std::make_pair(0,i);});
+                load_pairs.pop_tail(load_pairs.begin()+n);
             } else {
-                D = sequence<uintE>::from_function(
-                    n, [&](size_t i) { return GA->get_vertex(i).out_degree();
-                });
+                D.pop_tail(D.begin()+n);
+                //D = sequence<uintE>::from_function(
+                    //n, [&](size_t i) { return GA->get_vertex(i).out_degree();
+                //});
             }
             vtx_to_position = sequence<uintE>(n);
 
