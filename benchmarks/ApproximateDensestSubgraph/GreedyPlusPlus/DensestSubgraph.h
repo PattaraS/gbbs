@@ -61,12 +61,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   size_t n = G.n;
   size_t m = G.m;
 
-  auto composed_map = sequence<uintE>::from_function(n, [](size_t i) {return i;});
-  // A function to compose two index-maps together
-  auto composeMap = [](sequence<uintE>& base_map, sequence<uintE>& added_map) {
-      return sequence<uintE>::from_function( added_map.size(), [&](size_t i) { return base_map[added_map[i]]; });
-  };
-
   // Set floating-point output precision
   std::cout << std::setprecision(15) << std::fixed;
 
@@ -170,18 +164,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
       G.shrinkGraph(curN);
 
     };
-
     // %%%%%%%%
-
-
 
     // TODO: fix core threshold for approx-kcore.
     //uintE core_threshold = (max_core/(2*approx_kcore_base));
     uintE core_threshold = ceil(max_core/(2));
-    auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-        //uintE threshold = ceil(max_core/2);
-        return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
-    };
     
     // This might be needed as we are converting Graph& to sym_graph
     GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
@@ -209,8 +196,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto get_key = [&] (const pii& p) { return p.first; };
 
     auto first_sort = true;
-
-    auto first = true;
 
     auto rnd = parlay::random(seed);
 
