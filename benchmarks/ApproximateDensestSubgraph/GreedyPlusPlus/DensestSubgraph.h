@@ -169,9 +169,16 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     // TODO: fix core threshold for approx-kcore.
     //uintE core_threshold = (max_core/(2*approx_kcore_base));
     uintE core_threshold = ceil(max_core/(2));
+    if (option_run == 0) {
+      core_threshold = ceil(max_core/(2*approx_kcore_base));
+    }
     
     // This might be needed as we are converting Graph& to sym_graph
     GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
+
+    //if (option_run == 0) {
+      //cores = KCore(*GA, 16);
+    //}
 
     std::cout << "# k/2-core Delta(G): " << find_delta(*GA) << std::endl;
 
@@ -292,7 +299,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
         if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult) {
             auto km = (uintE) ceil(max_density/2);
-            core_threshold = km;
+            if(option_run ==0) {
+              if (km < core_threshold *cutoff_mult * approx_kcore_base) continue;
+              core_threshold = ceil(km/(approx_kcore_base));
+            } else {
+              core_threshold = km;
+            }
 
             shrink_graph(*GA, core_threshold);
 
