@@ -74,7 +74,7 @@ struct symmetric_graph {
   }
 
   uintE shrinkGraphVertex(uintE id, size_t new_n) {
-    if (id>=n) {
+    if (id>=new_n) {
       v_data[id].degree = 0;
       return 0;
     }
@@ -100,7 +100,7 @@ struct symmetric_graph {
   void shrinkGraph(size_t new_n) {
     //std::cout << "Begin Shrinking" << std::endl;
     auto degs = sequence<size_t>::from_function(
-        n, [&](size_t i) { 
+        new_n, [&](size_t i) { 
         return shrinkGraphVertex(i, new_n);
     });
 
