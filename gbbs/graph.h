@@ -86,7 +86,7 @@ struct symmetric_graph {
     while(s<e) {
       auto m =(s+e)>>1;
       if (std::get<0>(ngh.neighbors[m])<new_n) {
-        new_degree = m;
+        new_degree = m+1;
         s = m+1;
       } else {
         e = m;
