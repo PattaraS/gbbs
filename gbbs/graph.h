@@ -73,6 +73,41 @@ struct symmetric_graph {
     v_data[id].degree = degree;
   }
 
+  uintE shrinkGraphVertex(uintE id, size_t new_n) {
+    if (id>=n) {
+      v_data[id].degree = 0;
+      return 0;
+    }
+    //std::cout << "Shrinking " << id << std::endl;
+    auto ngh = get_vertex(id).out_neighbors();
+    uintE s =0;
+    uintE e =v_data[id].degree;
+    uintE new_degree = 0;
+    while(s<e) {
+      auto m =(s+e)>>1;
+      if (std::get<0>(ngh.neighbors[m])<new_n) {
+        new_degree = m;
+        s = m+1;
+      } else {
+        e = m;
+      }
+    }
+
+    v_data[id].degree = new_degree;
+    return new_degree;
+  }
+
+  void shrinkGraph(size_t new_n) {
+    //std::cout << "Begin Shrinking" << std::endl;
+    auto degs = sequence<size_t>::from_function(
+        n, [&](size_t i) { 
+        return shrinkGraphVertex(i, new_n);
+    });
+
+    n = new_n;
+    m = parlay::scan_inplace((degs));
+  }
+
   void zeroVertexDegree(uintE id) { decreaseVertexDegree(id, 0); }
 
   sequence<std::tuple<uintE, uintE, W>> edges() {

@@ -121,46 +121,24 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     // sort vertices by core numbers
     integer_sort_inplace(vertices_with_core_number, [&](const pii&p) {return -p.second;});
-
-    auto edges = G.edges();
-    integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE,W>& e){
-            return -std::min(cores[std::get<0>(e)],cores[std::get<1>(e)]);
-            });
-    //for (size_t i =0 ; i < 1000 ; ++ i ) std::cout << std::get<0>(edges[i]) << " " << std::get<1>(edges[i]) << " " << cores[std::get<0>(edges[i])] << " " <<cores[std::get<1>(edges[i])] << std::endl;
-    //std::cout <<"EDGES COUNT: " << edges.size() << std::endl;
-
-    /* TESTED
-    parallel_for(0, edges.size()-1, [&](size_t i){
-        if(std::min(cores[std::get<0>(edges[i])],cores[std::get<1>(edges[i])]) 
-            < std::min(cores[std::get<0>(edges[i+1])],cores[std::get<1>(edges[i+1])])) {
-          std::cout << "Assert failed sorting" << std::endl;
-          exit(0);
-
-        }});
-
-
-    parallel_for(0, n, [&](size_t i) {
-        if (i < n-1 && vertices_with_core_number[i].second <vertices_with_core_number[i+1].second) {
-            std::cout << "Assert failed sorting" << std::endl;
-            exit(0);
-        }
-    });
-    */
-
-    // renumbering vertices & edges and create a new graph
-
+    
+    // map vertices ids
     sequence<uintE> new_vertex_ids = sequence<uintE>(n);
     parallel_for(0, n, [&](size_t i) {
         new_vertex_ids[vertices_with_core_number[i].first] = i;
         });
-  
+    // correct core numbers
     parallel_for(0,n, [&](size_t i){
         cores[i] = vertices_with_core_number[i].second;
         });
+
+    // map edges 
+    auto edges = G.edges();
     parallel_for(0,m, [&](size_t i) {
         std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
         std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
         });
+
 
     auto curN = n,curM = m ;
     
@@ -168,19 +146,29 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
       auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
       vertices_with_core_number.pop_tail(shell);
       curN = vertices_with_core_number.size();
-      //for (size_t i =0 ; i < 1000 ; ++ i ) std::cout << std::get<0>(edges[i]) << " " << std::get<1>(edges[i]) << " " << cores[std::get<0>(edges[i])] << " " <<cores[std::get<1>(edges[i])] << std::endl;
 
-      // Somehow, sym_graph_from_edges alter the ordering of edges
-      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE,W>& e){
-          return -std::min(cores[std::get<0>(e)],cores[std::get<1>(e)]);
-          });
-      auto non_core_edges = parlay::find_if_not(edges, [&](const std::tuple<uintE, uintE, W> &e) {
+      edges = filter(edges, [&](const std::tuple<uintE, uintE, W> &e) -> bool {
           return (std::get<0>(e) < curN) && (std::get<1>(e) < curN);
           });
-      edges.pop_tail(non_core_edges);
+
+      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE, W>&e)  {
+          return curN*std::get<0>(e) + std::get<1>(e);
+      });
+
       curM = edges.size();
-      std::cout << "CURN CURM" << curN << " " << curM << std::endl;
-      return sym_graph_from_edges(edges, curN);
+      return sym_graph_from_edges(edges, curN, true);
+    };
+
+    auto shrink_graph = [&](sym_graph& G, uintE k) {
+      auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
+      vertices_with_core_number.pop_tail(shell);
+
+      if (vertices_with_core_number.size() == curN) return;
+
+      curN = vertices_with_core_number.size();
+
+      G.shrinkGraph(curN);
+
     };
 
     // %%%%%%%%
@@ -188,23 +176,23 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
 
     // TODO: fix core threshold for approx-kcore.
-    uintE core_threshold = ceil(max_core/2);
+    //uintE core_threshold = (max_core/(2*approx_kcore_base));
+    uintE core_threshold = ceil(max_core/(2));
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
         //uintE threshold = ceil(max_core/2);
-
         return (cores[u] >= core_threshold) && (cores[v] >= core_threshold);
     };
-    //auto induced_subgraph_with_mapping = inducedSubgraph(G, predicate, true);
-    //GA = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
+    
+    // This might be needed as we are converting Graph& to sym_graph
     GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
-    //composed_map = composeMap(composed_map, std::get<1>(induced_subgraph_with_mapping));
+
     std::cout << "# k/2-core Delta(G): " << find_delta(*GA) << std::endl;
 
     if (option_run != 2)
         total_densest_time += densest_timer.stop();
 
     std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
-    //std::cout << std::setprecision(15) << std::fixed << "### Initialization Time: " << total_densest_time << std::endl;
+
     std::cout << "### Initialization Time: " << total_densest_time << std::endl;
 
     if (option_run != 2)
@@ -287,10 +275,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             rem = n - i;
             return static_cast<double>(dens) / static_cast<double>(rem);
         });
-        //auto max_it = parlay::max_element(density_seq);
+
         auto max_it = parlay::max_element(density_seq, [&] (const double& a, const double& b) {
             return a<b;
             });
+
         std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
 
         //if (obtain_dsg && ((*max_it) > max_density) ) {
@@ -311,45 +300,27 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
         auto round_time = densest_timer.stop();
-        //sprintf(buff,"%.6lf", round_time);
-        //auto formatted_time = std::string(buff);
-        //std::cout << "### MWU iteration time: " << formatted_time << std::endl;
         std::cout << "### MWU iteration time: " << round_time << std::endl;
         total_densest_time += round_time;
         std::cout << "### Cumulative time: " << total_densest_time << std::endl;
         densest_timer.start();
 
-        //std::cout << "(DEBUG): " << max_density << " " << core_threshold << std::endl;
         if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult) {
-            //auto cores2 = KCore(*GA, 16);
             auto km = (uintE) ceil(max_density/2);
-            auto predicate2 = [&cores, &composed_map, km](const uintE& u, const uintE& v, const W& wgh) -> bool {
-                return (cores[composed_map[u]] >= km && cores[composed_map[v]] >= km);
-            };
             core_threshold = km;
-            //induced_subgraph_with_mapping = inducedSubgraph(*GA, predicate2, true);
-            //std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
-            //std::unique_ptr<sym_graph> GA2 = std::make_unique<sym_graph>(std::get<0>(induced_subgraph_with_mapping));
-            //composed_map = composeMap( composed_map, std::get<1>(induced_subgraph_with_mapping) );
-            GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
+
+            shrink_graph(*GA, core_threshold);
+
             n = GA->n;
             if (use_sorting) {
-                //load_pairs = sequence<pii>::from_function(
-                        //n, [](size_t i) { return std::make_pair(0,i);});
                 load_pairs.pop_tail(load_pairs.begin()+n);
             } else {
                 D.pop_tail(D.begin()+n);
-                //D = sequence<uintE>::from_function(
-                    //n, [&](size_t i) { return GA->get_vertex(i).out_degree();
-                //});
             }
             vtx_to_position = sequence<uintE>(n);
 
-            //std::cout << GA->n << " " << GA->m << std::endl;
             std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
-            std::cout << "# " << core_threshold<< "-core Delta(G): " << find_delta(*GA) << std::endl;
-            //if (option_run == 2)
-                //densest_timer.start();
+            //std::cout << "# " << core_threshold<< "-core Delta(G): " << find_delta(*GA) << std::endl;
         }
     }
     total_densest_time += densest_timer.stop();
