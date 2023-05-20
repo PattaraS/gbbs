@@ -29,6 +29,16 @@
 
 namespace gbbs {
 
+template <class Graph>
+uintE find_delta (Graph& G) {
+    auto degs = sequence<uintE>::from_function(G.n,
+        [&](size_t i) {
+            return G.get_vertex(i).out_degree();
+        });
+    return *parlay::max_element(degs);
+};
+
+
 // Implements a parallel version of Greedy++ that runs a parallel version of
 // Charikar's 2-approx algorithm for several iterations given as a parameter
 // into the problem as T, each run is O(m+n) expected work and O(\rho\log n) depth w.h.p.
@@ -47,8 +57,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   timer densest_timer;
   auto num_iters = T;
 
-  //char buff[100]; // a buffer for sprintf
-
   using pii = typename std::pair<uintE, uintE>;
   using W = typename Graph::weight_type;
   typedef symmetric_graph<gbbs::symmetric_vertex, W> sym_graph;
@@ -64,26 +72,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   // Set floating-point output precision
   std::cout << std::setprecision(15) << std::fixed;
 
-  // A function to find max degree - a bit hacky because of interface.
-  auto find_delta_first = [](Graph& G) {
-    auto degs = sequence<uintE>::from_function(G.n,
-        [&](size_t i) {
-            return G.get_vertex(i).out_degree();
-        });
-    return *parlay::max_element(degs);
-  };
-
-  std::cout << "# Initial Delta(G): " << find_delta_first(G) << std::endl;
-
-  // A function to find max degree.
-  // TODO: we don't need two functions for this. Either convert the graph or use some template.
-  auto find_delta = [](sym_graph& G) {
-    auto degs = sequence<uintE>::from_function(G.n,
-        [&](size_t i) {
-            return G.get_vertex(i).out_degree();
-        });
-    return *parlay::max_element(degs);
-  };
+  std::cout << "# Initial Delta(G): " << find_delta(G) << std::endl;
 
   std::unique_ptr<sym_graph> GA, DSG;
   uintE max_core = 0;
@@ -114,13 +103,16 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             });
 
     // sort vertices by core numbers
-    integer_sort_inplace(vertices_with_core_number, [&](const pii&p) {return -p.second;});
+    integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
+        return -p.second; // using -p.second to sort in the descending order.
+        });
     
     // map vertices ids
     sequence<uintE> new_vertex_ids = sequence<uintE>(n);
     parallel_for(0, n, [&](size_t i) {
         new_vertex_ids[vertices_with_core_number[i].first] = i;
         });
+
     // correct core numbers
     parallel_for(0,n, [&](size_t i){
         cores[i] = vertices_with_core_number[i].second;
@@ -134,7 +126,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         });
 
 
-    auto curN = n,curM = m ;
+    auto curN = n, curM = m ;
     
     auto obtain_core = [&](uintE k) {
       auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
@@ -166,8 +158,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     };
     // %%%%%%%%
 
-    // TODO: fix core threshold for approx-kcore.
-    //uintE core_threshold = (max_core/(2*approx_kcore_base));
     uintE core_threshold = ceil(max_core/(2));
     if (option_run == 0) {
       core_threshold = ceil(max_core/(2*approx_kcore_base));
@@ -175,10 +165,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     
     // This might be needed as we are converting Graph& to sym_graph
     GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
-
-    //if (option_run == 0) {
-      //cores = KCore(*GA, 16);
-    //}
 
     std::cout << "# k/2-core Delta(G): " << find_delta(*GA) << std::endl;
 
@@ -208,13 +194,13 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     auto vtx_to_position = sequence<uintE>(n);
 
-    while (--T > 0) {
+    while (T-- > 0) {
 
         size_t round_width = 0;
 
         if (use_sorting) {
             auto order = integer_sort(load_pairs, get_key);
-            if (first_sort) {
+            if (first_sort) { // reset load after the first round
                 first_sort = false;
                 load_pairs = sequence<pii>::from_function(
                         n, [&D](size_t i) { return std::make_pair(0,i);});
@@ -286,18 +272,18 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         //}
 
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
+        auto round_time = densest_timer.stop();
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
         std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
-        auto round_time = densest_timer.stop();
         std::cout << "### MWU iteration time: " << round_time << std::endl;
         total_densest_time += round_time;
         std::cout << "### Cumulative time: " << total_densest_time << std::endl;
         densest_timer.start();
 
-        if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult) {
+        if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult * approx_kcore_base) {
             auto km = (uintE) ceil(max_density/2);
             if(option_run ==0) {
               if (km < core_threshold *cutoff_mult * approx_kcore_base) continue;
@@ -338,7 +324,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     auto vtx_to_position = sequence<uintE>(n);
 
-    while (--T > 0) {
+    while (T-- > 0) {
         size_t round_width = 0;
 
         if (use_sorting) {
@@ -370,8 +356,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             density_above[pos_u] = 2 * G.get_vertex(i).out_neighbors().count(vtx_f);
             D[i] = D[i] + density_above[pos_u] / 2;
             load_pairs[i].first = load_pairs[i].first + density_above[pos_u];
-            round_width = std::max(round_width, density_above[pos_u]);
+            //round_width = std::max(round_width, density_above[pos_u]);
         });
+
+
+        round_width = std::max(round_width, *parlay::max_element(density_above));
 
         max_width = std::max(max_width, round_width);
 
@@ -396,12 +385,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             return static_cast<double>(dens) / static_cast<double>(rem);
         });
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
+        auto round_time = densest_timer.stop(); // 42e-05
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
         std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
 
         std::cout << "### " << T << " remaining rounds" << std::endl;
-        auto round_time = densest_timer.stop(); // 42e-05
         //sprintf(buff,"%.6lf", round_time);
         //auto formatted_time = std::string(buff);
         //std::cout << "### MWU iteration time: " << formatted_time << std::endl;
@@ -415,12 +404,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
   std::cout << "### Total core time: " << total_densest_time << std::endl;
   std::cout << "### Avg core time: " << total_densest_time / num_iters << std::endl;
-  if (obtain_dsg && DSG) {
-    std::cout << "DESNSEST SUBGRAPH nm: " << DSG->n << " " << DSG->m/2 << " " << (1.0*DSG->m/DSG->n/2) <<  std::endl;
-    auto parents = gbbs::bfs_cc::CC(*DSG);
-    auto unique_parents = unique(parents);
-    std::cout << "CC counts: " << unique_parents.size() << std::endl;
-  }
+  //if (obtain_dsg && DSG) {
+    //std::cout << "DESNSEST SUBGRAPH nm: " << DSG->n << " " << DSG->m/2 << " " << (1.0*DSG->m/DSG->n/2) <<  std::endl;
+    //auto parents = gbbs::bfs_cc::CC(*DSG);
+    //auto unique_parents = unique(parents);
+    //std::cout << "CC counts: " << unique_parents.size() << std::endl;
+  //}
   return max_density;
 }
 
