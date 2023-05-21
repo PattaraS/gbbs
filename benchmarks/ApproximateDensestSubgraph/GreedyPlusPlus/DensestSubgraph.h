@@ -83,6 +83,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     if (option_run == 0) {
         cores = ApproxKCore(G, 16, approx_kcore_base);
     } else {
+        approx_kcore_base = 1;
         cores = KCore(G, 16);
     }
 
