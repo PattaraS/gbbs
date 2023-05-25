@@ -228,10 +228,12 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             density_above[pos_u] = 2 * GA->get_vertex(i).out_neighbors().count(vtx_f);
             D[i] = D[i] + density_above[pos_u] / 2;
             load_pairs[i].first = load_pairs[i].first + density_above[pos_u] / 2;
-            round_width = std::max(round_width, density_above[pos_u]);
+            //round_width = std::max(round_width, density_above[pos_u]);
         });
 
-        max_width = std::max(max_width, round_width);
+        max_width = std::max(max_width, 
+            parlay::reduce_max(density_above)
+            );
 
         auto density_rev =
             parlay::make_slice(density_above.rbegin(), density_above.rend());
@@ -360,10 +362,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             //round_width = std::max(round_width, density_above[pos_u]);
         });
 
-
-        round_width = std::max(round_width, *parlay::max_element(density_above));
-
-        max_width = std::max(max_width, round_width);
+        //round_width = std::max(round_width, *parlay::max_element(density_above));
+        max_width = std::max(max_width, parlay::reduce_max(density_above));
 
         auto density_rev =
             parlay::make_slice(density_above.rbegin(), density_above.rend());
