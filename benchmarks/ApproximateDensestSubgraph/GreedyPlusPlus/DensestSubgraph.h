@@ -98,38 +98,78 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     // Notice that, after renumbering, we can decide in O(1) if we want to keep an edge.
     // We can also sort edges by min(core(u),core(v)) desc. This way, we also need prefix set of edges.
     // %%%%%%%%
+    auto curN = n, curM = m ;
+
     sequence<pii> vertices_with_core_number = sequence<pii>::from_function(n,
             [&cores](size_t i) ->pii {
                 return {i,cores[i]};
             });
+    auto obtain_core = [&](Graph& G, uintE k) {
 
-    // sort vertices by core numbers
-    integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
-        return -p.second; // using -p.second to sort in the descending order.
-        });
-    
-    // map vertices ids
-    sequence<uintE> new_vertex_ids = sequence<uintE>(n);
-    parallel_for(0, n, [&](size_t i) {
-        new_vertex_ids[vertices_with_core_number[i].first] = i;
-        });
+      // sort vertices by core numbers
+      integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
+          return -p.second; // using -p.second to sort in the descending order.
+          });
+      
+      // map vertices ids
+      sequence<uintE> new_vertex_ids = sequence<uintE>(n);
+      parallel_for(0, n, [&](size_t i) {
+          new_vertex_ids[vertices_with_core_number[i].first] = i;
+          });
 
-    // correct core numbers
-    parallel_for(0,n, [&](size_t i){
-        cores[i] = vertices_with_core_number[i].second;
-        });
+      // correct core numbers
+      parallel_for(0,n, [&](size_t i){
+          cores[i] = vertices_with_core_number[i].second;
+          });
 
-    // map edges 
-    auto edges = G.edges();
-    parallel_for(0,m, [&](size_t i) {
-        std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
-        std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
-        });
+      // map edges 
+      auto edges = G.edges();
+      parallel_for(0,m, [&](size_t i) {
+          std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
+          std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
+          });
 
+      auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
+      vertices_with_core_number.pop_tail(shell);
+      curN = vertices_with_core_number.size();
 
-    auto curN = n, curM = m ;
-    
-    auto obtain_core = [&](uintE k) {
+      edges = filter(edges, [&](const std::tuple<uintE, uintE, W> &e) -> bool {
+          return (std::get<0>(e) < curN) && (std::get<1>(e) < curN);
+          });
+
+      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE, W>&e)  {
+          return curN*std::get<0>(e) + std::get<1>(e);
+      });
+
+      curM = edges.size();
+      return sym_graph_from_edges(edges, curN, true);
+    };
+
+    auto obtain_core_sym = [&](sym_graph& G, uintE k) {
+
+      // sort vertices by core numbers
+      integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
+          return -p.second; // using -p.second to sort in the descending order.
+          });
+      
+      // map vertices ids
+      sequence<uintE> new_vertex_ids = sequence<uintE>(curN);
+      parallel_for(0, curN, [&](size_t i) {
+          new_vertex_ids[vertices_with_core_number[i].first] = i;
+          });
+
+      // correct core numbers
+      parallel_for(0,curN, [&](size_t i){
+          cores[i] = vertices_with_core_number[i].second;
+          });
+
+      // map edges 
+      auto edges = G.edges();
+      parallel_for(0,curM, [&](size_t i) {
+          std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
+          std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
+          });
+
       auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
       vertices_with_core_number.pop_tail(shell);
       curN = vertices_with_core_number.size();
@@ -161,11 +201,19 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     uintE core_threshold = ceil(max_core/(2));
     if (option_run == 0) {
-      core_threshold = ceil(max_core/(2*approx_kcore_base));
+      auto GG = obtain_core(G, ceil(max_core/(2*approx_kcore_base)));
+      cores = KCore(GG, 16);
+      vertices_with_core_number = sequence<pii>::from_function(curN,
+            [&cores](size_t i) ->pii {
+                return {i,cores[i]};
+            });
+      GA = std::make_unique<sym_graph>(obtain_core_sym(GG, core_threshold));
+
+    } else {
+      // This might be needed as we are converting Graph& to sym_graph
+      GA = std::make_unique<sym_graph>(obtain_core(G, core_threshold));
     }
     
-    // This might be needed as we are converting Graph& to sym_graph
-    GA = std::make_unique<sym_graph>(obtain_core(core_threshold));
 
     std::cout << "# k/2-core Delta(G): " << find_delta(*GA) << std::endl;
 
@@ -284,14 +332,9 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### Cumulative time: " << total_densest_time << std::endl;
         densest_timer.start();
 
-        if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult * approx_kcore_base) {
+        if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult) {
             auto km = (uintE) ceil(max_density/2);
-            if(option_run ==0) {
-              if (km < core_threshold *cutoff_mult * approx_kcore_base) continue;
-              core_threshold = ceil(km/(approx_kcore_base));
-            } else {
-              core_threshold = km;
-            }
+            core_threshold = km;
 
             shrink_graph(*GA, core_threshold);
 
