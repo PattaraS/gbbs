@@ -194,9 +194,9 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto rnd = parlay::random(seed);
 
     auto vtx_to_position = sequence<uintE>(n);
-
-    while (T-- > 0) {
-
+    size_t round_ctr= 0;
+    while (round_ctr++ < T) {
+        
         size_t round_width = 0;
 
         if (use_sorting) {
@@ -259,7 +259,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             return a<b;
             });
 
-        std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
+        std::cout << "# ROUND " << round_ctr <<  "/" << T <<" Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
 
         //if (obtain_dsg && ((*max_it) > max_density) ) {
           //size_t pos_max = max_it - density_seq.begin();
@@ -277,8 +277,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
         std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
-
-        std::cout << "### " << T << " remaining rounds" << std::endl;
+        
+        std::cout << "### " << T - round_ctr << " remaining rounds" << std::endl;
         std::cout << "### MWU iteration time: " << round_time << std::endl;
         total_densest_time += round_time;
         std::cout << "### Cumulative time: " << total_densest_time << std::endl;
@@ -325,7 +325,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     auto vtx_to_position = sequence<uintE>(n);
 
-    while (T-- > 0) {
+    size_t round_ctr= 0;
+    while (round_ctr++ < T) {
         size_t round_width = 0;
 
         if (use_sorting) {
@@ -382,13 +383,20 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             rem = n - i;
             return static_cast<double>(dens) / static_cast<double>(rem);
         });
+
+        auto max_it = parlay::max_element(density_seq, [&] (const double& a, const double& b) {
+            return a<b;
+            });
+
+        std::cout << "# ROUND " << round_ctr <<  "/" << T <<" Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
+
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
         auto round_time = densest_timer.stop(); // 42e-05
         std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
                 << std::endl;
         std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
 
-        std::cout << "### " << T << " remaining rounds" << std::endl;
+        std::cout << "### " << T-round_ctr << " remaining rounds" << std::endl;
         //sprintf(buff,"%.6lf", round_time);
         //auto formatted_time = std::string(buff);
         //std::cout << "### MWU iteration time: " << formatted_time << std::endl;
