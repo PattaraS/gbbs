@@ -203,6 +203,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     if (option_run == 0) {
       auto GG = obtain_core(G, ceil(max_core/(2*approx_kcore_base)));
       cores = KCore(GG, 16);
+      max_core = parlay::reduce_max(cores);
+      core_threshold = ceil(max_core/(2));
       vertices_with_core_number = sequence<pii>::from_function(curN,
             [&cores](size_t i) ->pii {
                 return {i,cores[i]};
