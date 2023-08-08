@@ -64,6 +64,13 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   double max_density = 0.0;
   auto total_densest_time = 0.0;
 
+  auto update_time = [&]() {
+    auto time_since_last_start = densest_timer.stop();
+    total_densest_time += time_since_last_start;
+    densest_timer.start();
+    return time_since_last_start;
+  };
+
   size_t max_width = 0;
 
   size_t n = G.n;
@@ -86,6 +93,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         approx_kcore_base = 1;
         cores = KCore(G, 16);
     }
+
+    std::cout << "k-core-decomposition time: " << update_time() << std::endl;
 
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
@@ -203,6 +212,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     if (option_run == 0) {
       auto GG = obtain_core(G, ceil(max_core/(2*approx_kcore_base)));
       cores = KCore(GG, 16);
+
+      std::cout<< "second-k-core-decomposition time: " << update_time() << std::endl;
       max_core = parlay::reduce_max(cores);
       core_threshold = ceil(max_core/(2));
       vertices_with_core_number = sequence<pii>::from_function(curN,
@@ -309,7 +320,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             return a<b;
             });
 
-        std::cout << "# ROUND " << round_ctr <<  "/" << T <<" Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
+        //std::cout << "# ROUND " << round_ctr <<  "/" << T <<" Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
 
         //if (obtain_dsg && ((*max_it) > max_density) ) {
           //size_t pos_max = max_it - density_seq.begin();
@@ -323,17 +334,20 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
         //}
 
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
-        auto round_time = densest_timer.stop();
-        std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
-                << std::endl;
-        std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
-        
-        std::cout << "### " << T - round_ctr << " remaining rounds" << std::endl;
-        std::cout << "### MWU iteration time: " << round_time << std::endl;
-        total_densest_time += round_time;
-        std::cout << "### Cumulative time: " << total_densest_time << std::endl;
-        densest_timer.start();
+        auto round_time = update_time();
 
+        //auto round_time = densest_timer.stop();
+        //std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
+                //<< std::endl;
+        //std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
+        
+        //std::cout << "### " << T - round_ctr << " remaining rounds" << std::endl;
+        //std::cout << "### MWU iteration time: " << round_time << std::endl;
+        //total_densest_time += round_time;
+        //std::cout << "### Cumulative time: " << total_densest_time << std::endl;
+        //densest_timer.start();
+        
+        auto prune_time = 0.0;
         if ((option_run < 3) && max_density/2.0 > core_threshold * cutoff_mult) {
             auto km = (uintE) ceil(max_density/2);
             core_threshold = km;
@@ -348,9 +362,26 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             }
             vtx_to_position = sequence<uintE>(n);
 
-            std::cout << "Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
+            //std::cout << "### Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
             //std::cout << "# " << core_threshold<< "-core Delta(G): " << find_delta(*GA) << std::endl;
+            prune_time = densest_timer.stop();
+            total_densest_time += prune_time;
         }
+        std::cout << "### summary: " 
+          << option_run << " "
+          << approx_kcore_base << " "
+          << (use_sorting? "Sort" :"Peel") << " "
+          << round_ctr << " "
+          << round_time << " "
+          << prune_time << " "
+          << total_densest_time << " "
+          << max_density / 2.0 << " "
+          << GA->n << " "
+          << GA->m << " "
+          << (round_width/2) << " "
+          << max_width 
+          << std::endl;
+        densest_timer.start();
     }
     total_densest_time += densest_timer.stop();
   } else {
@@ -433,28 +464,46 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             return a<b;
             });
 
-        std::cout << "# ROUND " << round_ctr <<  "/" << T <<" Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
+        //std::cout << "# ROUND " << round_ctr <<  "/" << T <<" Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
 
         max_density = std::max(max_density,parlay::reduce_max(density_seq));
-        auto round_time = densest_timer.stop(); // 42e-05
-        std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
-                << std::endl;
-        std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
 
-        std::cout << "### " << T-round_ctr << " remaining rounds" << std::endl;
-        //sprintf(buff,"%.6lf", round_time);
-        //auto formatted_time = std::string(buff);
-        //std::cout << "### MWU iteration time: " << formatted_time << std::endl;
-        std::cout << "### MWU iteration time: " << round_time << std::endl;
-        total_densest_time += round_time;
-        std::cout << "### Cumulative time: " << total_densest_time << std::endl;
+        auto round_time = update_time(); // 42e-05
+
+        //auto round_time = densest_timer.stop(); // 42e-05
+        //std::cout << "### Density of current Densest Subgraph is: " << max_density / 2.0
+                //<< std::endl;
+        //std::cout << "### Empirical width so far (round/max) is: " << round_width / 2 << "/" << max_width / 2 << std::endl;
+
+        //std::cout << "### " << T-round_ctr << " remaining rounds" << std::endl;
+        ////sprintf(buff,"%.6lf", round_time);
+        ////auto formatted_time = std::string(buff);
+        ////std::cout << "### MWU iteration time: " << formatted_time << std::endl;
+        //std::cout << "### MWU iteration time: " << round_time << std::endl;
+        //total_densest_time += round_time;
+        //std::cout << "### Cumulative time: " << total_densest_time << std::endl;
+        //
+        std::cout << "### summary: " 
+          << option_run << " "
+          << approx_kcore_base << " "
+          << (use_sorting? "Sort" :"Peel") << " "
+          << round_ctr << " "
+          << round_time << " "
+          << 0 << " "
+          << total_densest_time << " "
+          << max_density / 2.0 << " "
+          << G.n << " "
+          << G.m << " "
+          << (round_width/2) << " "
+          << max_width 
+          << std::endl;
         densest_timer.start();
     }
 
   }
 
-  std::cout << "### Total core time: " << total_densest_time << std::endl;
-  std::cout << "### Avg core time: " << total_densest_time / num_iters << std::endl;
+  std::cout << "### Total runtime: " << total_densest_time << std::endl;
+  std::cout << "### Avg time per iteration: " << total_densest_time / num_iters << std::endl;
   //if (obtain_dsg && DSG) {
     //std::cout << "DESNSEST SUBGRAPH nm: " << DSG->n << " " << DSG->m/2 << " " << (1.0*DSG->m/DSG->n/2) <<  std::endl;
     //auto parents = gbbs::bfs_cc::CC(*DSG);
