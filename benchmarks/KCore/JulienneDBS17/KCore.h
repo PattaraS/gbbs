@@ -57,6 +57,9 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
         -> const std::optional<std::tuple<uintE, uintE> > {
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
+          if (v > n) {
+            std::cout << "v greater than n" << v << " " << n << std::endl;
+          }
           uintE deg = D[v];
           if (deg > k) {
             uintE new_deg = std::max(deg - edgesRemoved, k);

@@ -111,12 +111,15 @@ struct symmetric_graph {
   void zeroVertexDegree(uintE id) { decreaseVertexDegree(id, 0); }
 
   sequence<std::tuple<uintE, uintE, W>> edges() {
+    std::cout << "edges() is called" << std::endl;
     using g_edge = std::tuple<uintE, uintE, W>;
     auto degs = sequence<size_t>::from_function(
         n, [&](size_t i) { return get_vertex(i).out_degree(); });
     size_t sum_degs = parlay::scan_inplace(make_slice(degs));
     assert(sum_degs == m);
+    std::cout << "edges() sum degs asserted" << std::endl;
     auto edges = sequence<g_edge>(sum_degs);
+    std::cout << "edges() constructing edges" << std::endl;
     parallel_for(0, n,
                  [&](size_t i) {
                    size_t k = degs[i];
@@ -127,6 +130,7 @@ struct symmetric_graph {
                    get_vertex(i).out_neighbors().map(map_f, false);
                  },
                  1);
+    std::cout << "edges() returning edges" << std::endl;
     return edges;
   }
 
