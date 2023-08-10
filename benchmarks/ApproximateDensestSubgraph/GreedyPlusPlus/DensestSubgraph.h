@@ -41,7 +41,7 @@ namespace gbbs {
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
-        int option_run = 0, double approx_kcore_base = 1.05) {
+        int option_run = 0, double approx_kcore_base = 1.0) {
   timer densest_timer;
   auto num_iters = T;
 
@@ -67,7 +67,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     std::cout << "Max core number is: " << max_core << std::endl;
 
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-        uintE threshold = ceil(max_core/2);
+        uintE threshold = ceil(max_core/(2 * approx_kcore_base));
 
         return (cores[u] >= threshold) && (cores[v] >= threshold);
     };

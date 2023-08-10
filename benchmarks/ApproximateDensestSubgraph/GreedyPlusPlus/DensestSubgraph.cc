@@ -42,7 +42,7 @@ double DensestSubgraph_runner(Graph& G, commandLine P) {
   size_t iter = P.getOptionIntValue("-iter", 5);
   double cutoff = P.getOptionDoubleValue("-cutoff", 1);
   int option_run = P.getOptionIntValue("-option", 0);
-  double approx_kcore_base = P.getOptionDoubleValue("-approx_kcore_base", 1.05);
+  double approx_kcore_base = P.getOptionDoubleValue("-approx_kcore_base", 1.0);
   std::cout << "### Application: DensestSubgraph" << std::endl;
   std::cout << "### Graph: " << P.getArgument(0) << std::endl;
   std::cout << "### Threads: " << num_workers() << std::endl;
