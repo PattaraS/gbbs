@@ -113,80 +113,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             [&cores](size_t i) ->pii {
                 return {i,cores[i]};
             });
-    std::cout << "DEBUG: initiate vertices with core number" << std::endl;
     auto obtain_core = [&](Graph& G, uintE k) {
-      std::cout << "DEBUG: sorting" << std::endl;
       // sort vertices by core numbers
       integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
-          return -p.second; // using -p.second to sort in the descending order.
-          });
-      
-      // map vertices ids
-      sequence<uintE> new_vertex_ids = sequence<uintE>(n);
-      parallel_for(0, n, [&](size_t i) {
-          new_vertex_ids[vertices_with_core_number[i].first] = i;
-          });
-
-      // correct core numbers
-      parallel_for(0,n, [&](size_t i){
-          cores[i] = vertices_with_core_number[i].second;
-          });
-
-      //std::cout << "DEBUG: map edges" << std::endl;
-      //// map edges 
-      //auto edges = G.edges();
-      //std::cout << "DEBUG: m " << m << " " << edges.size() << std::endl;
-      //parallel_for(0,m, [&](size_t i) {
-          //std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
-          //std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
-          //});
-      
-      std::cout << "DEBUG: map edges DONE" << std::endl;
-      std::cout << "DEBUG: grab shell (number of vertices of k/2core)" << std::endl;
-      auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
-      std::cout << "DEBUG: grab shell (number of vertices of k/2core) DONE" << std::endl;
-      vertices_with_core_number.pop_tail(shell);
-      std::cout << "DEBUG: pop tails DONE" << std::endl;
-      curN = vertices_with_core_number.size();
-
-      std::cout << "DEBUG: map edges" << std::endl;
-      // map edges 
-      auto pred = [&](const uintE& u, const uintE&v, const W& w) {
-        return new_vertex_ids[u] < curN && new_vertex_ids[v] < curN;
-      };
-      parallel_for(0, n, [&](size_t i) {
-        G.packNeighbors(i, pred, NULL);
-      });
-      std::cout << "DEBUG: packed edges" << std::endl;
-      //sequence<std::tuple<uintE,uintE, W>> edges = sample_edges(G,[&](const uintE& u, const uintE& v, const W& wgh) -> bool {
-            //return new_vertex_ids[u] < curN && new_vertex_ids[v] < curN;
-          //}).E;
-      auto edges = G.edges();
-      std::cout << "DEBUG: m " << m << " " << edges.size() << std::endl;
-      parallel_for(0,edges.size(), [&](size_t i) {
-          std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
-          std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
-          });
-
-      std::cout << "DEBUG: get remaining vertices" << std::endl;
-      edges = filter(edges, [&](const std::tuple<uintE, uintE, W> &e) -> bool {
-          return (std::get<0>(e) < curN) && (std::get<1>(e) < curN);
-          });
-
-      std::cout << "DEBUG: get second sorted vertices" << std::endl;
-      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE, W>&e)  {
-          return curN*std::get<0>(e) + std::get<1>(e);
-      });
-
-      curM = edges.size();
-      return sym_graph_from_edges(edges, curN, true);
-    };
-
-    auto obtain_core_sym = [&](sym_graph& G, uintE k) {
-      std::cout << "DEBUG: sorting" << std::endl;
-      // sort vertices by core numbers
-      integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
-          return -p.second; // using -p.second to sort in the descending order.
+          return ~p.second; // using ~p.second to sort in the descending order.
           });
       
       // map vertices ids
@@ -200,29 +130,104 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
           cores[i] = vertices_with_core_number[i].second;
           });
 
-      std::cout << "DEBUG: map edges" << std::endl;
+      //std::cout << "DEBUG: map edges" << std::endl;
+      //// map edges 
+      //auto edges = G.edges();
+      //std::cout << "DEBUG: m " << m << " " << edges.size() << std::endl;
+      //parallel_for(0,m, [&](size_t i) {
+          //std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
+          //std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
+          //});
+      //if (vertices_with_core_number[0].second == 0 ) vertices_with_core_number[0].second = vertices_with_core_number[1].second;
+      
+      auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
+      vertices_with_core_number.pop_tail(shell);
+      auto nextN = vertices_with_core_number.size();
+
       // map edges 
-      auto edges = G.edges();
-      std::cout << "DEBUG: m " << m << " " << edges.size() << std::endl;
-      parallel_for(0,curM, [&](size_t i) {
-          std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
-          std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
+      auto pred = [&](const uintE& u, const uintE&v, const W& w) {
+        return new_vertex_ids[u] < nextN && new_vertex_ids[v] < nextN;
+      };
+      std::cout <<"new n " << nextN << std::endl;
+
+      auto degs = sequence<size_t>::from_function(curN, [&](size_t i) {
+          //return G.packNeighbors(i, pred, NULL);
+          return G.get_vertex(i).out_neighbors().count(pred);
+
+      });
+      size_t sum_degs = parlay::scan_inplace(make_slice(degs));
+      std::cout <<"new M " << sum_degs << std::endl;
+
+      auto edges = sequence<std::tuple<uintE,uintE,W>>(sum_degs);
+      parallel_for(0,curN, [&](size_t i)  {
+        if (new_vertex_ids[i] >= nextN) return;
+        size_t k = degs[i];
+        auto map_f = [&](const uintE& u, const uintE& v, const W& wgh) {
+          if (pred(u,v,wgh))
+            edges[k++] = std::make_tuple(new_vertex_ids[u], new_vertex_ids[v], wgh);
+        };
+        G.get_vertex(i).out_neighbors().map(map_f, false);
+      });
+
+      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE, W>&e)  {
+          return nextN*std::get<0>(e) + std::get<1>(e);
+      });
+
+      curN = nextN;
+      curM = edges.size();
+      return sym_graph_from_edges(edges, curN, true);
+    };
+
+    auto obtain_core_sym = [&](sym_graph& G, uintE k) {
+      // sort vertices by core numbers
+      integer_sort_inplace(vertices_with_core_number, [&](const pii& p) {
+          return ~p.second; // using -p.second to sort in the descending order.
+          });
+      
+      // map vertices ids
+      sequence<uintE> new_vertex_ids = sequence<uintE>(curN);
+      parallel_for(0, curN, [&](size_t i) {
+          new_vertex_ids[vertices_with_core_number[i].first] = i;
+          });
+
+      // correct core numbers
+      parallel_for(0,curN, [&](size_t i){
+          cores[i] = vertices_with_core_number[i].second;
           });
 
       auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
-      vertices_with_core_number.pop_tail(shell);
-      curN = vertices_with_core_number.size();
+      if (shell != vertices_with_core_number.end()) {
+        vertices_with_core_number.pop_tail(shell);
+      }
+      auto nextN = vertices_with_core_number.size();
 
-      std::cout << "DEBUG: get remaining vertices" << std::endl;
-      edges = filter(edges, [&](const std::tuple<uintE, uintE, W> &e) -> bool {
-          return (std::get<0>(e) < curN) && (std::get<1>(e) < curN);
-          });
-
-      std::cout << "DEBUG: get second sorted vertices" << std::endl;
-      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE, W>&e)  {
-          return curN*std::get<0>(e) + std::get<1>(e);
+      auto pred = [&](const uintE& u, const uintE&v, const W& w) {
+        return new_vertex_ids[u] < nextN && new_vertex_ids[v] < nextN;
+      };
+      //std::cout << "DEBUG: PACK" <<std::endl;
+      auto degs = sequence<size_t>::from_function(curN, [&](size_t i) {
+          return G.get_vertex(i).out_neighbors().count(pred);
+          //return G.packNeighbors(i, pred, NULL);
+      });
+      size_t sum_degs = parlay::scan_inplace(make_slice(degs));
+      //std::cout << "DEBUG: MAP" <<std::endl;
+      auto edges = sequence<std::tuple<uintE,uintE,W>>(sum_degs);
+      parallel_for(0,curN, [&](size_t i)  {
+        if (new_vertex_ids[i] >= nextN) return;
+        size_t k = degs[i];
+        auto map_f = [&](const uintE& u, const uintE& v, const W& wgh) {
+          if (pred(u,v,wgh))
+            edges[k++] = std::make_tuple(new_vertex_ids[u], new_vertex_ids[v], wgh);
+        };
+        G.get_vertex(i).out_neighbors().map(map_f, false);
       });
 
+      integer_sort_inplace(edges, [&](const std::tuple<uintE,uintE, W>&e)  {
+          return nextN*std::get<0>(e) + std::get<1>(e);
+      });
+
+      //std::cout << "DEBUG: RETURN" <<std::endl;
+      curN = nextN;
       curM = edges.size();
       return sym_graph_from_edges(edges, curN, true);
     };
@@ -256,7 +261,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
 
     } else {
       // This might be needed as we are converting Graph& to sym_graph
-      std::cout << "DEBUG: call obtain_core() on original graph "<< std::endl;
+      //std::cout << "DEBUG: call obtain_core() on original graph "<< std::endl;
       GA = std::make_unique<sym_graph>(obtain_core(G, core_threshold));
     }
     

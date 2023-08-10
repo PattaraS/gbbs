@@ -228,6 +228,7 @@ struct uncompressed_neighbors {
       return k;
     } else {
       // copy to tmp
+      if (tmp == NULL) tmp = new std::tuple<uintE, W>[degree]; // allocate memory if needed
       parallel_for(0, degree, [&](size_t i) { tmp[i] = neighbors[i]; });
       auto pc = [&](const std::tuple<uintE, W>& nw) {
         return p(id, std::get<0>(nw), std::get<1>(nw));
