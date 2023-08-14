@@ -37,12 +37,12 @@ namespace gbbs {
 // option_run parameters:
 //  0: approximate k-core first round, ceil of approximate density second run
 //  1: exact k-core first round, ceil of approximate density second run
-//  2: outputs running time of algorithm when run on ceil of approximate density THIS OPTION IS OBSELETED 
+//  2: outputs running time of algorithm when run on ceil of approximate density THIS OPTION IS OBSELETED
 //  3: outputs running time of algorithm when only (max k)/2 core
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
-        int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false, bool obtain_dsg = false) {
+        int option_run = 0, double approx_kcore_base = 1.0, bool use_sorting = false, bool obtain_dsg = false) {
   timer densest_timer;
   auto num_iters = T;
 
@@ -66,10 +66,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   };
 
   std::cout << std::setprecision(15) << std::fixed;
-  
+
   auto find_delta_first = [](Graph& G) {
-    auto degs = sequence<uintE>::from_function(G.n, 
-        [&](size_t i) { 
+    auto degs = sequence<uintE>::from_function(G.n,
+        [&](size_t i) {
             return G.get_vertex(i).out_degree();
         });
     return *parlay::max_element(degs);
@@ -78,8 +78,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
   std::cout << "# Initial Delta(G): " << find_delta_first(G) << std::endl;
 
   auto find_delta = [](sym_graph& G) {
-    auto degs = sequence<uintE>::from_function(G.n, 
-        [&](size_t i) { 
+    auto degs = sequence<uintE>::from_function(G.n,
+        [&](size_t i) {
             return G.get_vertex(i).out_degree();
         });
     return *parlay::max_element(degs);
@@ -100,7 +100,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
 
-    uintE core_threshold = ceil(max_core/2);
+    uintE core_threshold = ceil(max_core/2 * (approx_kcore_base));
     auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {
         //uintE threshold = ceil(max_core/2);
 
@@ -126,7 +126,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto D = sequence<uintE>::from_function(
         n, [&](size_t i) { return GA->get_vertex(i).out_degree();
     });
-    
+
     auto load_pairs = sequence<pii>::from_function(
             n, [&D](size_t i) { return std::make_pair(D[i],i);});
     auto get_key = [&] (const pii& p) { return p.first; };
@@ -138,11 +138,11 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     auto rnd = parlay::random(seed);
 
     auto vtx_to_position = sequence<uintE>(n);
-    
+
     while (--T > 0) {
 
         size_t round_width = 0;
-        
+
         if (use_sorting) {
             auto order = integer_sort(load_pairs, get_key);
             if (first_sort) {
@@ -203,7 +203,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             return a<b;
             });
         std::cout << "# ROUND Densest Subgraph is: " << (*max_it) /2.0 << std::endl;
-        
+
         if (obtain_dsg && ((*max_it) > max_density) ) {
           size_t pos_max = max_it - density_seq.begin();
           auto predicate_DSG = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {

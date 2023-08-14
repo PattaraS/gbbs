@@ -1,0 +1,430 @@
+### Application: DensestSubgraph
+### Graph: /home/quanquan/graphs/hyperlinks2012_gbbs
+### Threads: 60
+### n: 3563602789
+### m: 225840663232
+### Params: -seed = 1
+### Params: -iter = 20
+### Params: -cutoff = 1
+### Params: -option = 1
+### Params: -approx_kcore_base = 1
+### ------------------------------------
+# Initial Delta(G): 95041164
+### rho = 130728 k_{max} = 10565
+Max core number is: 10565
+# k/2-core Delta(G): 67920
+Pruned graph (n,m) = (250477,2093858644)
+### Initialization Time: 280.087648999999999
+# ROUND Densest Subgraph is: 5592.377010914137827
+### Density of current Densest Subgraph is: 5592.377010914137827
+### Empirical width so far (round/max) is: 10683/10683
+### 19 remaining rounds
+### MWU iteration time: 0.069828000000000
+### Cumulative time: 280.157476999999972
+Pruned graph (n,m) = (233729,2000293873)
+# 5593-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.051163869322409
+### Density of current Densest Subgraph is: 5645.051163869322409
+### Empirical width so far (round/max) is: 67792/67792
+### 18 remaining rounds
+### MWU iteration time: 10.320625000000000
+### Cumulative time: 290.478101999999978
+Pruned graph (n,m) = (228073,1968248320)
+# 5646-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.103066736364781
+### Density of current Densest Subgraph is: 5645.103066736364781
+### Empirical width so far (round/max) is: 67792/67792
+### 17 remaining rounds
+### MWU iteration time: 9.531546000000001
+### Cumulative time: 300.009647999999970
+# ROUND Densest Subgraph is: 4314.539678085525338
+### Density of current Densest Subgraph is: 5645.103066736364781
+### Empirical width so far (round/max) is: 67792/67792
+### 16 remaining rounds
+### MWU iteration time: 0.084370000000000
+### Cumulative time: 300.094017999999949
+# ROUND Densest Subgraph is: 5649.293331703441254
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 13702/67792
+### 15 remaining rounds
+### MWU iteration time: 0.068461000000000
+### Cumulative time: 300.162478999999962
+Pruned graph (n,m) = (222304,1934981400)
+# 5650-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.103177830709683
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 67792/67792
+### 14 remaining rounds
+### MWU iteration time: 9.833224000000000
+### Cumulative time: 309.995702999999935
+# ROUND Densest Subgraph is: 4351.695758960702733
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 67792/67792
+### 13 remaining rounds
+### MWU iteration time: 0.067495000000000
+### Cumulative time: 310.063197999999943
+# ROUND Densest Subgraph is: 5649.293331703441254
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 13702/67792
+### 12 remaining rounds
+### MWU iteration time: 0.072133000000000
+### Cumulative time: 310.135330999999951
+# ROUND Densest Subgraph is: 5170.735874128341493
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 17297/67792
+### 11 remaining rounds
+### MWU iteration time: 0.076257000000000
+### Cumulative time: 310.211587999999949
+# ROUND Densest Subgraph is: 5904.041105936709755
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 19059/67792
+### 10 remaining rounds
+### MWU iteration time: 0.068215000000000
+### Cumulative time: 310.279802999999959
+Pruned graph (n,m) = (204578,1830134838)
+# 5905-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5643.609550396708983
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 67792/67792
+### 9 remaining rounds
+### MWU iteration time: 8.845053000000000
+### Cumulative time: 319.124855999999966
+# ROUND Densest Subgraph is: 4472.546916090684135
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 67792/67792
+### 8 remaining rounds
+### MWU iteration time: 0.069938000000000
+### Cumulative time: 319.194793999999945
+# ROUND Densest Subgraph is: 5649.405714006284143
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 13702/67792
+### 7 remaining rounds
+### MWU iteration time: 0.072686000000000
+### Cumulative time: 319.267479999999921
+# ROUND Densest Subgraph is: 5170.702033328237121
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 17297/67792
+### 6 remaining rounds
+### MWU iteration time: 0.066224000000000
+### Cumulative time: 319.333703999999898
+# ROUND Densest Subgraph is: 5905.194423382658897
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 18397/67792
+### 5 remaining rounds
+### MWU iteration time: 0.062668000000000
+### Cumulative time: 319.396371999999872
+Pruned graph (n,m) = (204577,1830123029)
+# 5906-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5643.601957154191950
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 67792/67792
+### 4 remaining rounds
+### MWU iteration time: 8.779358000000000
+### Cumulative time: 328.175729999999874
+# ROUND Densest Subgraph is: 4472.539918954721543
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 67792/67792
+### 3 remaining rounds
+### MWU iteration time: 0.064882000000000
+### Cumulative time: 328.240611999999885
+# ROUND Densest Subgraph is: 5649.405714006284143
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 13702/67792
+### 2 remaining rounds
+### MWU iteration time: 0.082101000000000
+### Cumulative time: 328.322712999999908
+# ROUND Densest Subgraph is: 5170.702033328237121
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 17297/67792
+### 1 remaining rounds
+### MWU iteration time: 0.067209000000000
+### Cumulative time: 328.389921999999899
+### Total core time: 328.389922999999897
+### Avg core time: 16.419496149999993
+### Application: DensestSubgraph
+### Graph: /home/quanquan/graphs/hyperlinks2012_gbbs
+### Threads: 60
+### n: 3563602789
+### m: 225840663232
+### Params: -seed = 1
+### Params: -iter = 20
+### Params: -cutoff = 1.000000000000000
+### Params: -option = 1
+### Params: -approx_kcore_base = 1.000000000000000
+### ------------------------------------
+# Initial Delta(G): 95041164
+### rho = 130728 k_{max} = 10565
+Max core number is: 10565
+# k/2-core Delta(G): 67920
+Pruned graph (n,m) = (250477,2093858644)
+### Initialization Time: 270.465655000000027
+# ROUND Densest Subgraph is: 5592.377010914137827
+### Density of current Densest Subgraph is: 5592.377010914137827
+### Empirical width so far (round/max) is: 10683/10683
+### 19 remaining rounds
+### MWU iteration time: 0.069740000000000
+### Cumulative time: 270.535395000000051
+Pruned graph (n,m) = (233729,2000293873)
+# 5593-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.051163869322409
+### Density of current Densest Subgraph is: 5645.051163869322409
+### Empirical width so far (round/max) is: 67792/67792
+### 18 remaining rounds
+### MWU iteration time: 10.106798000000000
+### Cumulative time: 280.642193000000077
+Pruned graph (n,m) = (228073,1968248320)
+# 5646-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.103066736364781
+### Density of current Densest Subgraph is: 5645.103066736364781
+### Empirical width so far (round/max) is: 67792/67792
+### 17 remaining rounds
+### MWU iteration time: 9.630172000000000
+### Cumulative time: 290.272365000000093
+# ROUND Densest Subgraph is: 4314.539678085525338
+### Density of current Densest Subgraph is: 5645.103066736364781
+### Empirical width so far (round/max) is: 67792/67792
+### 16 remaining rounds
+### MWU iteration time: 0.067006000000000
+### Cumulative time: 290.339371000000085
+# ROUND Densest Subgraph is: 5649.293331703441254
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 13702/67792
+### 15 remaining rounds
+### MWU iteration time: 0.074665000000000
+### Cumulative time: 290.414036000000067
+Pruned graph (n,m) = (222304,1934981400)
+# 5650-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.103177830709683
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 67792/67792
+### 14 remaining rounds
+### MWU iteration time: 9.605700000000001
+### Cumulative time: 300.019736000000080
+# ROUND Densest Subgraph is: 4351.695758960702733
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 67792/67792
+### 13 remaining rounds
+### MWU iteration time: 0.072538000000000
+### Cumulative time: 300.092274000000089
+# ROUND Densest Subgraph is: 5649.293331703441254
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 13702/67792
+### 12 remaining rounds
+### MWU iteration time: 0.070293000000000
+### Cumulative time: 300.162567000000081
+# ROUND Densest Subgraph is: 5170.735874128341493
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 17297/67792
+### 11 remaining rounds
+### MWU iteration time: 0.064269000000000
+### Cumulative time: 300.226836000000105
+# ROUND Densest Subgraph is: 5904.041105936709755
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 19059/67792
+### 10 remaining rounds
+### MWU iteration time: 0.063684000000000
+### Cumulative time: 300.290520000000129
+Pruned graph (n,m) = (204578,1830134838)
+# 5905-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5643.609550396708983
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 67792/67792
+### 9 remaining rounds
+### MWU iteration time: 8.939731000000000
+### Cumulative time: 309.230251000000123
+# ROUND Densest Subgraph is: 4472.546916090684135
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 67792/67792
+### 8 remaining rounds
+### MWU iteration time: 0.065803000000000
+### Cumulative time: 309.296054000000140
+# ROUND Densest Subgraph is: 5649.405714006284143
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 13702/67792
+### 7 remaining rounds
+### MWU iteration time: 0.066108000000000
+### Cumulative time: 309.362162000000126
+# ROUND Densest Subgraph is: 5170.702033328237121
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 17297/67792
+### 6 remaining rounds
+### MWU iteration time: 0.065096000000000
+### Cumulative time: 309.427258000000108
+# ROUND Densest Subgraph is: 5905.194423382658897
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 18397/67792
+### 5 remaining rounds
+### MWU iteration time: 0.066458000000000
+### Cumulative time: 309.493716000000120
+Pruned graph (n,m) = (204577,1830123029)
+# 5906-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5643.601957154191950
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 67792/67792
+### 4 remaining rounds
+### MWU iteration time: 8.923783999999999
+### Cumulative time: 318.417500000000132
+# ROUND Densest Subgraph is: 4472.539918954721543
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 67792/67792
+### 3 remaining rounds
+### MWU iteration time: 0.064645000000000
+### Cumulative time: 318.482145000000116
+# ROUND Densest Subgraph is: 5649.405714006284143
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 13702/67792
+### 2 remaining rounds
+### MWU iteration time: 0.066695000000000
+### Cumulative time: 318.548840000000098
+# ROUND Densest Subgraph is: 5170.702033328237121
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 17297/67792
+### 1 remaining rounds
+### MWU iteration time: 0.064488000000000
+### Cumulative time: 318.613328000000081
+### Total core time: 318.613329000000078
+### Avg core time: 15.930666450000004
+### Application: DensestSubgraph
+### Graph: /home/quanquan/graphs/hyperlinks2012_gbbs
+### Threads: 60
+### n: 3563602789
+### m: 225840663232
+### Params: -seed = 1
+### Params: -iter = 20
+### Params: -cutoff = 1.000000000000000
+### Params: -option = 1
+### Params: -approx_kcore_base = 1.000000000000000
+### ------------------------------------
+# Initial Delta(G): 95041164
+### rho = 130728 k_{max} = 10565
+Max core number is: 10565
+# k/2-core Delta(G): 67920
+Pruned graph (n,m) = (250477,2093858644)
+### Initialization Time: 272.819448000000023
+# ROUND Densest Subgraph is: 5592.377010914137827
+### Density of current Densest Subgraph is: 5592.377010914137827
+### Empirical width so far (round/max) is: 10683/10683
+### 19 remaining rounds
+### MWU iteration time: 0.071304000000000
+### Cumulative time: 272.890752000000020
+Pruned graph (n,m) = (233729,2000293873)
+# 5593-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.051163869322409
+### Density of current Densest Subgraph is: 5645.051163869322409
+### Empirical width so far (round/max) is: 67792/67792
+### 18 remaining rounds
+### MWU iteration time: 9.835326999999999
+### Cumulative time: 282.726079000000027
+Pruned graph (n,m) = (228073,1968248320)
+# 5646-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.103066736364781
+### Density of current Densest Subgraph is: 5645.103066736364781
+### Empirical width so far (round/max) is: 67792/67792
+### 17 remaining rounds
+### MWU iteration time: 9.566535999999999
+### Cumulative time: 292.292615000000012
+# ROUND Densest Subgraph is: 4314.539678085525338
+### Density of current Densest Subgraph is: 5645.103066736364781
+### Empirical width so far (round/max) is: 67792/67792
+### 16 remaining rounds
+### MWU iteration time: 0.067090000000000
+### Cumulative time: 292.359705000000019
+# ROUND Densest Subgraph is: 5649.293331703441254
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 13702/67792
+### 15 remaining rounds
+### MWU iteration time: 0.068370000000000
+### Cumulative time: 292.428075000000035
+Pruned graph (n,m) = (222304,1934981400)
+# 5650-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5645.103177830709683
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 67792/67792
+### 14 remaining rounds
+### MWU iteration time: 9.885076000000000
+### Cumulative time: 302.313151000000062
+# ROUND Densest Subgraph is: 4351.695758960702733
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 67792/67792
+### 13 remaining rounds
+### MWU iteration time: 0.069097000000000
+### Cumulative time: 302.382248000000061
+# ROUND Densest Subgraph is: 5649.293331703441254
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 13702/67792
+### 12 remaining rounds
+### MWU iteration time: 0.067948000000000
+### Cumulative time: 302.450196000000062
+# ROUND Densest Subgraph is: 5170.735874128341493
+### Density of current Densest Subgraph is: 5649.293331703441254
+### Empirical width so far (round/max) is: 17297/67792
+### 11 remaining rounds
+### MWU iteration time: 0.068459000000000
+### Cumulative time: 302.518655000000081
+# ROUND Densest Subgraph is: 5904.041105936709755
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 19059/67792
+### 10 remaining rounds
+### MWU iteration time: 0.073035000000000
+### Cumulative time: 302.591690000000085
+Pruned graph (n,m) = (204578,1830134838)
+# 5905-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5643.609550396708983
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 67792/67792
+### 9 remaining rounds
+### MWU iteration time: 8.871092000000001
+### Cumulative time: 311.462782000000061
+# ROUND Densest Subgraph is: 4472.546916090684135
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 67792/67792
+### 8 remaining rounds
+### MWU iteration time: 0.067042000000000
+### Cumulative time: 311.529824000000076
+# ROUND Densest Subgraph is: 5649.405714006284143
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 13702/67792
+### 7 remaining rounds
+### MWU iteration time: 0.065180000000000
+### Cumulative time: 311.595004000000074
+# ROUND Densest Subgraph is: 5170.702033328237121
+### Density of current Densest Subgraph is: 5904.041105936709755
+### Empirical width so far (round/max) is: 17297/67792
+### 6 remaining rounds
+### MWU iteration time: 0.062529000000000
+### Cumulative time: 311.657533000000058
+# ROUND Densest Subgraph is: 5905.194423382658897
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 18397/67792
+### 5 remaining rounds
+### MWU iteration time: 0.070816000000000
+### Cumulative time: 311.728349000000037
+Pruned graph (n,m) = (204577,1830123029)
+# 5906-core Delta(G): 67920
+# ROUND Densest Subgraph is: 5643.601957154191950
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 67792/67792
+### 4 remaining rounds
+### MWU iteration time: 8.858428000000000
+### Cumulative time: 320.586777000000041
+# ROUND Densest Subgraph is: 4472.539918954721543
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 67792/67792
+### 3 remaining rounds
+### MWU iteration time: 0.069217000000000
+### Cumulative time: 320.655994000000021
+# ROUND Densest Subgraph is: 5649.405714006284143
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 13702/67792
+### 2 remaining rounds
+### MWU iteration time: 0.064607000000000
+### Cumulative time: 320.720601000000045
+# ROUND Densest Subgraph is: 5170.702033328237121
+### Density of current Densest Subgraph is: 5905.194423382658897
+### Empirical width so far (round/max) is: 17297/67792
+### 1 remaining rounds
+### MWU iteration time: 0.067570000000000
+### Cumulative time: 320.788171000000034
+### Total core time: 320.788172000000031
+### Avg core time: 16.039408600000002
+# time per iter: 323.700076999999965
