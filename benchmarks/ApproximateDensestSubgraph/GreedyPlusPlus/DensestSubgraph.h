@@ -43,7 +43,7 @@ namespace gbbs {
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
-        int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false, bool obtain_dsg = false) {
+        int option_run = 0, double approx_kcore_base = 1.0, bool use_sorting = false, bool obtain_dsg = false) {
   timer densest_timer;
   auto num_iters = T;
 
