@@ -99,14 +99,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     max_core = parlay::reduce_max(cores);
     std::cout << "Max core number is: " << max_core << std::endl;
 
-    // TODO: To implement a better subgraph function we will use a prefix array.
-    // More precisely, we sort vertices by their core numbers in desc order.
-    // Then to get a k-core, we find the largest index such that core(v)>=k.
-    // We then shrink graphs into those vertices.
-    // To implement this, we also have to think about how to shrink edges.
-    // Notice that, after renumbering, we can decide in O(1) if we want to keep an edge.
-    // We can also sort edges by min(core(u),core(v)) desc. This way, we also need prefix set of edges.
-    // %%%%%%%%
     auto curN = n, curM = m ;
     
     sequence<pii> vertices_with_core_number = sequence<pii>::from_function(n,
@@ -130,15 +122,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
           cores[i] = vertices_with_core_number[i].second;
           });
 
-      //std::cout << "DEBUG: map edges" << std::endl;
-      //// map edges 
-      //auto edges = G.edges();
-      //std::cout << "DEBUG: m " << m << " " << edges.size() << std::endl;
-      //parallel_for(0,m, [&](size_t i) {
-          //std::get<0>(edges[i]) = new_vertex_ids[std::get<0>(edges[i])];
-          //std::get<1>(edges[i]) = new_vertex_ids[std::get<1>(edges[i])];
-          //});
-      //if (vertices_with_core_number[0].second == 0 ) vertices_with_core_number[0].second = vertices_with_core_number[1].second;
       
       auto shell = parlay::find_if_not(vertices_with_core_number, [&](const pii& p) {return p.second >= k;});
       vertices_with_core_number.pop_tail(shell);
@@ -151,7 +134,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
       std::cout <<"new n " << nextN << std::endl;
 
       auto degs = sequence<size_t>::from_function(curN, [&](size_t i) {
-          //return G.packNeighbors(i, pred, NULL);
           return G.get_vertex(i).out_neighbors().count(pred);
 
       });
@@ -204,13 +186,10 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
       auto pred = [&](const uintE& u, const uintE&v, const W& w) {
         return new_vertex_ids[u] < nextN && new_vertex_ids[v] < nextN;
       };
-      //std::cout << "DEBUG: PACK" <<std::endl;
       auto degs = sequence<size_t>::from_function(curN, [&](size_t i) {
           return G.get_vertex(i).out_neighbors().count(pred);
-          //return G.packNeighbors(i, pred, NULL);
       });
       size_t sum_degs = parlay::scan_inplace(make_slice(degs));
-      //std::cout << "DEBUG: MAP" <<std::endl;
       auto edges = sequence<std::tuple<uintE,uintE,W>>(sum_degs);
       parallel_for(0,curN, [&](size_t i)  {
         if (new_vertex_ids[i] >= nextN) return;
@@ -226,7 +205,6 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
           return nextN*std::get<0>(e) + std::get<1>(e);
       });
 
-      //std::cout << "DEBUG: RETURN" <<std::endl;
       curN = nextN;
       curM = edges.size();
       return sym_graph_from_edges(edges, curN, true);

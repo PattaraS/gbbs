@@ -74,37 +74,16 @@ double KCore_runner(Graph& G, commandLine P) {
   std::cout << "### n: " << newN << std::endl;
   
   auto PG = filterGraph(G, predicate);
-  //uintE new_n = 0;
-  //parallel_for(n, [&](size_t i) {} );
   std::cout << "### SubGraph core: " << max_core/2 << std::endl;
-  //std::cout << "### n: " << PG.n << std::endl;
-  //std::cout << "### old m: " << G.m << std::endl;
   std::cout << "### m: " << PG.m << std::endl;
   std::cout << "### density: " << 0.5*PG.m/newN << std::endl;
-
-  //auto out_deg = 0;
-  //auto mapped_deg = 0;
-  //for (size_t cur_vert = 0 ; cur_vert < PG.n ; cur_vert++) {
-    //if (PG.get_vertex(cur_vert).out_degree() > 0) {
-        //auto edges = parlay::sequence<std::pair<uintE, uintE>>(PG.get_vertex(cur_vert).out_degree());
-        //out_deg += edges.size();
-        //auto map_f = [&](const uintE& u, const uintE& v, const W& wgh, const uintE& nghind) {
-            //edges[nghind] = std::make_pair(u, v);
-        //};
-        //PG.get_vertex(cur_vert).out_neighbors().map_with_index(map_f, false);
-
-        ////for (size_t idx = 0; idx < edges.size(); idx++) {
-            ////std::cout << edges[idx].first << " " << edges[idx].second << std::endl;
-        ////}
-    //}
-  //}
-  //std::cout << "### Computed outdeg: " << out_deg << std::endl;
 
   double tt = t.stop();
 
   std::cout << "### Running Time: " << tt << std::endl;
 
   return tt;
+
 }
 }  // namespace gbbs
 

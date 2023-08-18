@@ -80,7 +80,6 @@ def main():
                 if peeling == 'Sorting':
                   peeling_suffix= ' -use_sorting '
                 out_filename = os.path.join(write_dir, "_".join(out_path_components))
-                    # ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s -m " + str(compressed[0]) + " " + "-rounds " + str(rounds[0]) + " -iter " + iteration + " -option " + option + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
                 ss = ("PARLAY_NUM_THREADS=" + str(nw) + " ./DensestSubgraph -s " " -m " + str(compressed[0]) + " -rounds " + str(rounds[0]) + " -iter " + iteration + peeling_suffix + " -option " + option + " -obtain_dsg " + " -approx_kcore_base " + mult_factor + " " + read_dir + filename)
                 print(ss)
                 out = shellGetOutput(ss, 120)
