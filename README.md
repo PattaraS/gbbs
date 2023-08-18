@@ -44,12 +44,13 @@ Notice that, there are many parameters in our command. The following is their de
 ## Datasets
 You can download the graphs we used in our experiments using the following link:
 ```
-wget https://storage.googleapis.com/densest-subgraph-data/<GRAPH_NAME>
+wget https://storage.googleapis.com/densest-subgraph-graphs/<GRAPH_NAME>
 
 ```
 
 The following graphs in gbbs format are available for download:
 
+```
 brain
 dblp
 orkut
@@ -58,5 +59,6 @@ livejournal
 youtube
 stackoverflow
 hepph
+```
 
 Note that we utilize [gbbs format](https://github.com/ParAlg/gbbs#input-formats) to store graphs.
