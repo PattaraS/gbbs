@@ -6,7 +6,7 @@ Our code uses the framework of the [Graph-Based Benchmark Suite (GBBS)](https://
 The `benchmark/ApproximateDensestSubgraph/ours/` directory contains our code as well as our build/make files.
 <!--The `benchmark/ApproximateDensestSubgraph/ours/` directory ([Ours Subdirectory](./benchmark/ApproximateDensestSubgraph/ours.README.md))-->
 <!--contains relevant information to our algorithms as well as how to run the experiments.-->
-For more information regarding GBBS, please visit [their repository](https://github.com/ParAlg/gbbs) for more information.
+For more information regarding GBBS, please visit [their repository](https://github.com/ParAlg/gbbs).
 
 
 ## Updating Submodules
