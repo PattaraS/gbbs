@@ -127,6 +127,13 @@ struct buckets {
     update_buckets(get_id_and_bkt, n);
   }
 
+  void del() {
+    for (size_t i = 0; i < total_buckets; i++) {
+      bkts[i].del();
+    }
+    bkts.clear();
+  }
+
   ~buckets() {
     for (size_t i = 0; i < total_buckets; i++) {
       bkts[i].del();
