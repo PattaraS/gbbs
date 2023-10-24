@@ -28,6 +28,7 @@ uintE find_delta (Graph& G) {
 //  TODO: remove unused options
 //  3: outputs running time of algorithm when only (max k)/2 core
 //  4: outputs running time of parallel algorithm after *no* preprocessing done for cores
+//  5: approx k-core first round an following rounds (running coreness only once)
 template <class Graph>
 double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, double cutoff_mult = 1.0,
         int option_run = 0, double approx_kcore_base = 1.05, bool use_sorting = false, bool obtain_dsg = false) {
@@ -64,7 +65,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     if (option_run != 2 && option_run != 3)
         densest_timer.start();
     sequence<uintE> cores;
-    if (option_run == 0) {
+    if (option_run == 0 || option_run == 5) {
         cores = ApproxKCore(G, 16, approx_kcore_base);
     } else {
         approx_kcore_base = 1;
@@ -203,6 +204,7 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     uintE core_threshold = ceil(max_core/(2));
     if (option_run == 0) {
       auto GG = obtain_core(G, ceil(max_core/(2*approx_kcore_base)));
+      std::cout<< "shrink graph before second-k-core-decomposition time: " << update_time() << std::endl;
       cores = KCore(GG, 16);
 
       std::cout<< "second-k-core-decomposition time: " << update_time() << std::endl;
@@ -214,6 +216,9 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             });
       GA = std::make_unique<sym_graph>(obtain_core_sym(GG, core_threshold));
 
+    } else if (option_run == 5 ) {
+      GA = std::make_unique<sym_graph>(obtain_core(G, ceil(max_core/(2*approx_kcore_base))));
+      std::cout<< "shrink graph time: " << update_time() << std::endl;
     } else {
       // This might be needed as we are converting Graph& to sym_graph
       //std::cout << "DEBUG: call obtain_core() on original graph "<< std::endl;
@@ -345,6 +350,24 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
             auto km = (uintE) ceil(max_density/2);
             core_threshold = km;
 
+            shrink_graph(*GA, core_threshold);
+
+            n = GA->n;
+            if (use_sorting) {
+                load_pairs.pop_tail(load_pairs.begin()+n);
+            } else {
+                D.pop_tail(D.begin()+n);
+            }
+            vtx_to_position = sequence<uintE>(n);
+
+            //std::cout << "### Pruned graph (n,m) = (" << GA->n << "," <<GA->m << ")" << std::endl;
+            //std::cout << "# " << core_threshold<< "-core Delta(G): " << find_delta(*GA) << std::endl;
+            prune_time = densest_timer.stop();
+            total_densest_time += prune_time;
+        } else if (option_run == 5) {
+            auto km = (uintE) ceil(max_density/(2*approx_kcore_base));
+            core_threshold = km;
+          
             shrink_graph(*GA, core_threshold);
 
             n = GA->n;
