@@ -134,6 +134,7 @@ struct hist_table {
   using KV = std::tuple<K, V>;
   KV empty;
   parlay::sequence<KV> table;
+  KV* table_pointer;
   size_t size;
   hist_table(KV _empty, size_t _size) : empty(_empty), size(_size) {
     table = parlay::sequence<KV>(size, empty);
@@ -145,7 +146,13 @@ struct hist_table {
       size_t rounded_size = (1L << parlay::log2_up<size_t>(req_size));
       table = parlay::sequence<KV>(rounded_size, empty);
       size = rounded_size;
-      debug(std::cout << "resized to: " << size << "\n";);
+      //gbbs_debug(std::cout << "resized to: " << size << "\n";);
+    }
+  }
+
+  void del() {
+    if (table_pointer) {
+      gbbs::free_array(table_pointer, size);
     }
   }
 };
@@ -320,7 +327,7 @@ inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
     }
     auto out = sequence<O>::uninitialized(ct);
     size_t k = S.compactInto(apply_f, out.begin());
-    auto res = sequence<O>::uninitialized(k);
+    auto res = sequence<O>(k);
     for (size_t i = 0; i < k; i++) {
       res[i] = out[i];
     }
@@ -737,3 +744,4 @@ inline sequence<O> histogram_reduce(A& get_elm, B& get_key, size_t n,
 }
 
 }  // namespace gbbs
+
