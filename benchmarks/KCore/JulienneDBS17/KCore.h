@@ -112,8 +112,6 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
     bt.stop();
     auto active = vertexSubset(n, std::move(bkt.identifiers));
     uintE k = bkt.id;
-    std::cout << "Bucket id: " << k << std::endl;
-    std::cout << "Finished: " << active.size() << std::endl;
     finished += active.size();
     k_max = std::max((uintE){k_max}, (uintE){bkt.id});
     if (k != prev_bkt) {
