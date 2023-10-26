@@ -134,7 +134,6 @@ struct hist_table {
   using KV = std::tuple<K, V>;
   KV empty;
   parlay::sequence<KV> table;
-  KV* table_pointer;
   size_t size;
   hist_table(KV _empty, size_t _size) : empty(_empty), size(_size) {
     table = parlay::sequence<KV>(size, empty);
@@ -147,12 +146,6 @@ struct hist_table {
       table = parlay::sequence<KV>(rounded_size, empty);
       size = rounded_size;
       //gbbs_debug(std::cout << "resized to: " << size << "\n";);
-    }
-  }
-
-  void del() {
-    if (table_pointer) {
-      gbbs::free_array(table_pointer, size);
     }
   }
 };
