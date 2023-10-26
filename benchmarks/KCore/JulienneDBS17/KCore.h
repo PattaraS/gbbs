@@ -59,7 +59,7 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
           uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
           uintE deg = D[v];
           if (deg > k) {
-            uintE new_deg = std::max(deg - edgesRemoved, k);
+            uintE new_deg = std::max(deg - std::min(edgesRemoved, deg), k);
             D[v] = new_deg;
             return wrap(v, b.get_bucket(new_deg));
           }
@@ -90,7 +90,7 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
           return std::make_pair(G.get_vertex(i).out_degree(), false); });
   double one_plus_delta = log(1 + delta);
   auto get_bucket = [&](size_t deg) -> uintE {
-    return ceil(log(1 + deg) / one_plus_delta);
+    return std::max(ceil(log(1 + deg) / one_plus_delta), 1.0);
   };
   auto D = sequence<uintE>::from_function(G.n, [&] (size_t i) {
     return get_bucket(Degrees[i].first); });
@@ -99,7 +99,8 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
   auto b = make_vertex_buckets(n, D, increasing, num_buckets);
   timer bt;
 
-  size_t finished = 0, rho = 0, k_max = 0;
+  size_t finished = 0, rho = 0;
+  uintE k_max = 0;
 
   size_t cur_inner_rounds = 0;
   size_t max_inner_rounds = log(G.n) / log(1.0 + eps);
@@ -111,10 +112,10 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
     bt.stop();
     auto active = vertexSubset(n, std::move(bkt.identifiers));
     uintE k = bkt.id;
-    std::cout << "Bucket: " << k << std::endl;
-    std::cout << "Finished size: " << active.size() << std::endl;
+    std::cout << "Bucket id: " << k << std::endl;
+    std::cout << "Finished: " << active.size() << std::endl;
     finished += active.size();
-    k_max = std::max(k_max, bkt.id);
+    k_max = std::max((uintE){k_max}, (uintE){bkt.id});
     if (k != prev_bkt) {
       prev_bkt = k;
       cur_inner_rounds = 0;
@@ -140,13 +141,13 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
       uintE v = std::get<0>(p), edges_removed = std::get<1>(p);
       if (!Degrees[v].second) {
         uintE deg = Degrees[v].first;
-        uintE new_deg = std::max(deg - edges_removed, lower_bound);
+        uintE new_deg = std::max(deg - std::min(edges_removed, deg), lower_bound);
         assert(new_deg >= 0);
         Degrees[v].first = new_deg;
         uintE new_bkt = std::max(get_bucket(new_deg), k);
         uintE prev_bkt = D[v];
         if (prev_bkt != new_bkt) {
-          D[v] = new_bkt;
+          D[v] = uintE{new_bkt};
           return wrap(v, b.get_bucket(new_bkt));
         }
       }
@@ -168,8 +169,6 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
     cur_inner_rounds++;
   }
 
-  b.del();
-  //em.del();
   debug(bt.reportTotal("bucket time"););
 
   parallel_for(0, n, [&] (size_t i) {

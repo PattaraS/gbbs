@@ -93,7 +93,8 @@ double GreedyPlusPlusDensestSubgraph(Graph& G, size_t seed = 0, size_t T = 1, do
     sequence<uintE> cores;
     if (option_run == 0) {
         std::cout << "Using Approx KCore" << std::endl;
-        cores = ApproximateKCore(G);
+        double eps, delta = approx_kcore_base - 1;
+        cores = ApproximateKCore(G, 16, eps, delta);
     } else {
         cores = KCore(G, 16);
     }
