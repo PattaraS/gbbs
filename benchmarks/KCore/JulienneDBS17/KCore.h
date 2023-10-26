@@ -152,8 +152,7 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
     };
 
     auto cond_f = [] (const uintE& u) { return true; };
-    vertexSubsetData<uintE> moved = nghCount(G, active, cond_f, apply_f, em,
-        no_dense);
+    vertexSubsetData<uintE> moved = nghCount(G, active, cond_f, apply_f, em);
 
     bt.start();
     if (moved.dense()) {
