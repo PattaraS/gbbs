@@ -209,7 +209,8 @@ inline vertexSubsetData<O> edgeMapCount(Graph& GA, VS& vs, Cond& cond_f,
   auto degree_imap = parlay::delayed_seq<size_t>(vs.size(), degree_f);
   auto out_degrees = parlay::reduce(degree_imap);
   size_t degree_threshold = threshold;
-  if (threshold == -1) degree_threshold = GA.m / 20;
+  //if (threshold == -1) degree_threshold = GA.m / 60;
+  if (threshold == -1) degree_threshold = 50000000;
   if (vs.size() + out_degrees > degree_threshold) {
     // dense
     return edgeMapCount_dense<O>(GA, vs, cond_f, apply_f, fl);

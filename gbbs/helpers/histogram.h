@@ -178,7 +178,7 @@ inline sequence<O> histogram_medium(A& get_key, size_t n, Apply& apply_f,
                                               (uintE)num_buckets);
   } else {
     std::tie(elms, counts, num_blocks, m) =
-        gbbs::_count_sort<uint16_t, size_t, K>(get_key, gb, n,
+        gbbs::_count_sort<uintE, size_t, K>(get_key, gb, n,
                                                (uintE)num_buckets);
   }
   size_t block_size = ((n - 1) / num_blocks) + 1;
@@ -320,7 +320,7 @@ inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
     }
     auto out = sequence<O>::uninitialized(ct);
     size_t k = S.compactInto(apply_f, out.begin());
-    auto res = sequence<O>::uninitialized(k);
+    auto res = sequence<O>(k);
     for (size_t i = 0; i < k; i++) {
       res[i] = out[i];
     }
@@ -359,7 +359,7 @@ inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
                                               (uintE)num_total_buckets);
   } else {
     std::tie(elms, counts, num_blocks, m) =
-        gbbs::_count_sort<uint16_t, size_t, K>(get_key, gb, n,
+        gbbs::_count_sort<uintE, size_t, K>(get_key, gb, n,
                                                (uintE)num_total_buckets);
   }
 
@@ -617,7 +617,7 @@ inline sequence<O> histogram_reduce(A& get_elm, B& get_key, size_t n,
   };
 
   auto p =
-      gbbs::_count_sort<int16_t, size_t, E>(get_elm, gb, n, (uintE)num_buckets);
+      gbbs::_count_sort<uintE, size_t, E>(get_elm, gb, n, (uintE)num_buckets);
 
   auto& elms = std::get<0>(p);  // count-sort'd
   // laid out as num_buckets (row), blocks (col)
