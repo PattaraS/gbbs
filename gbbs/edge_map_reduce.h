@@ -39,22 +39,23 @@ template <class E, class Graph, class VS, class Map, class Cond>
 inline vertexSubsetData<E> edgeMapInduced(Graph& G, VS& V, Map& map_f,
                                           Cond& cond_f, uintE empty_key,
                                           const flags fl) {
-  uintT m = V.size();
   V.toSparse();
-  auto degrees = sequence<uintT>(m);
+  size_t m = V.size();
+  auto degrees = sequence<size_t>::uninitialized(m);
   parallel_for(0, m, [&](size_t i) {
     auto v = G.get_vertex(V.vtx(i));
-    uintE degree = (fl & in_edges) ? v.in_degree() : v.out_degree();
+    size_t degree = (fl & in_edges) ? v.in_degree() : v.out_degree();
     degrees[i] = degree;
   });
-  long edgeCount = parlay::scan_inplace(make_slice(degrees));
+  size_t edgeCount = parlay::scan_inplace(make_slice(degrees));
   if (edgeCount == 0) {
     return vertexSubsetData<E>(G.n);
   }
   using S = typename vertexSubsetData<E>::S;
   auto edges = sequence<S>::uninitialized(edgeCount);
+  // std::cout << "edgeCount = " << edgeCount << std::endl;
 
-  auto gen = [&](const uintE& ngh, const uintE& offset,
+  auto gen = [&](const uintE& ngh, const size_t& offset,
                  const std::optional<E>& val = std::nullopt) {
     if (cond_f(ngh)) {
       if
@@ -78,7 +79,7 @@ inline vertexSubsetData<E> edgeMapInduced(Graph& G, VS& V, Map& map_f,
   if (fl & in_edges) {
     parallel_for(0, m,
                  [&](size_t i) {
-                   uintT o = degrees[i];
+                   size_t o = degrees[i];
                    auto v = V.vtx(i);
                    G.get_vertex(v).in_neighbors().copy(o, map_f, gen);
                  },
@@ -86,7 +87,7 @@ inline vertexSubsetData<E> edgeMapInduced(Graph& G, VS& V, Map& map_f,
   } else {
     parallel_for(0, m,
                  [&](size_t i) {
-                   uintT o = degrees[i];
+                   size_t o = degrees[i];
                    auto v = V.vtx(i);
                    G.get_vertex(v).out_neighbors().copy(o, map_f, gen);
                  },
@@ -103,6 +104,7 @@ inline vertexSubsetData<O> edgeMapCount_sparse(Graph& GA, VS& vs,
                                                hist_table<uintE, O>& ht,
                                                Cond& cond_f, Apply& apply_f,
                                                const flags fl = 0) {
+  timer st; st.start();
   static_assert(
       std::is_same<O, uintE>::value,
       "Currently apply_f must emit the same type as the count-type (uintE)");
@@ -117,12 +119,14 @@ inline vertexSubsetData<O> edgeMapCount_sparse(Graph& GA, VS& vs,
   uintE empty_key = std::get<0>(ht.empty);
   auto oneHop = edgeMapInduced<gbbs::empty, Graph, VS>(GA, vs, map_f, cond_f,
                                                        empty_key, fl);
-  oneHop.toSparse();
 
   auto key_f = [&](size_t i) -> uintE { return oneHop.vtx(i); };
   auto get_key = parlay::delayed_seq<uintE>(oneHop.size(), key_f);
+//  auto res =
+//      histogram_sort<std::tuple<uintE, O> >(get_key, oneHop.size(), apply_f, ht);
   auto res =
       histogram<std::tuple<uintE, O> >(get_key, oneHop.size(), apply_f, ht);
+//  std::cout << "Sparse iter: " << st.stop() << " size = " << one_hop_size << std::endl;
   return vertexSubsetData<O>(vs.n, std::move(res));
 }
 
@@ -132,15 +136,15 @@ inline vertexSubsetData<O> edgeMapCount_dense(Graph& GA, VS& vs, Cond& cond_f,
                                               Apply& apply_f,
                                               const flags fl = 0) {
   using W = typename Graph::weight_type;
+  timer dt;
+  dt.start();
   size_t n = GA.n;
   size_t m = vs.size();
   if (m == 0) {
     return vertexSubsetData<O>(vs.numNonzeros());
   }
   using OT = std::tuple<bool, O>;
-  std::cout << "Making vs dense!" << std::endl;
   vs.toDense();
-  std::cout << "Made it dense!" << std::endl;
 
   debug(std::cout << "running dense" << std::endl << std::endl;);
 
@@ -185,6 +189,7 @@ inline vertexSubsetData<O> edgeMapCount_dense(Graph& GA, VS& vs, Cond& cond_f,
                    }
                  },
                  1);
+//    std::cout << "Dense time: " << dt.stop() << std::endl;
     return vertexSubsetData<O>(n, std::move(out));
   }
 }
@@ -202,15 +207,16 @@ inline vertexSubsetData<O> edgeMapCount(Graph& GA, VS& vs, Cond& cond_f,
   }
   vs.toSparse();
   auto degree_f = [&](size_t i) -> size_t {
-    auto neighbors = (fl & in_edges) ? GA.get_vertex(i).in_neighbors()
-                                     : GA.get_vertex(i).out_neighbors();
+    auto v = vs.vtx(i);
+    auto neighbors = (fl & in_edges) ? GA.get_vertex(v).in_neighbors()
+                                     : GA.get_vertex(v).out_neighbors();
     return neighbors.get_virtual_degree();
   };
   auto degree_imap = parlay::delayed_seq<size_t>(vs.size(), degree_f);
   auto out_degrees = parlay::reduce(degree_imap);
   size_t degree_threshold = threshold;
-  //if (threshold == -1) degree_threshold = GA.m / 60;
-  if (threshold == -1) degree_threshold = 50000000;
+  if (threshold == -1) degree_threshold = GA.m/40;
+  // std::cout << "vs.size = " << vs.size() << " out_degrees = " << out_degrees << " degree_threshold = " << degree_threshold << std::endl;
   if (vs.size() + out_degrees > degree_threshold) {
     // dense
     return edgeMapCount_dense<O>(GA, vs, cond_f, apply_f, fl);

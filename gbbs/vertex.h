@@ -240,7 +240,7 @@ struct uncompressed_neighbors {
   }
 
   template <class F, class G>
-  inline void copy(uintT offset, F f, G g) {
+  inline void copy(size_t offset, F f, G g) {
     parallel_for(0, degree, [&](size_t j) {
       auto nw = neighbors[j];
       uintE ngh = std::get<0>(nw);

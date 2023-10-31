@@ -164,7 +164,7 @@ inline sequence<O> histogram_medium(A& get_key, size_t n, Apply& apply_f,
   // (1) count-sort based on bucket
   size_t low_mask = ~((size_t)15);
   size_t bucket_mask = num_buckets - 1;
-  auto gb = [&](uintE i) {
+  auto gb = [&](size_t i) {
     return parlay::hash32(get_key[i] & low_mask) & bucket_mask;
   };
 
@@ -301,6 +301,34 @@ inline sequence<O> histogram_medium(A& get_key, size_t n, Apply& apply_f,
 }
 
 // Applies light/heavy buckets
+
+template <class O, class K, class V, class A, class Apply>
+inline sequence<O> histogram_sort(A& get_key, size_t n, Apply& apply_f,
+                             hist_table<K, V>& ht) {
+  auto keys = parlay::sequence<K>::from_function(n, [&] (size_t i) -> K { return get_key[i]; });
+  uintE empty_key = std::get<0>(ht.empty);
+  parlay::sort_inplace(parlay::make_slice(keys));
+  auto flags = parlay::delayed_seq<size_t>(n, [&] (size_t i) {
+    return (i == 0) || (keys[i] != keys[i-1]);
+  });
+  auto indices = parlay::pack_index<size_t>(flags);
+  auto applied = parlay::sequence<O>(indices.size());
+  parlay::parallel_for(0, indices.size(), [&] (size_t i) {
+    size_t start = indices[i];
+    size_t end = (i == indices.size() - 1) ? n : indices[i+1];
+    K key = keys[start];
+    assert (key != empty_key);
+    size_t ct = end - start;
+    auto value = apply_f(std::make_pair(key, ct));
+    if (value.has_value()) {
+      applied[i] = *value;
+    } else {
+      applied[i] = ht.empty;
+    }
+  });
+  return applied;
+}
+
 template <class O, class K, class V, class A, class Apply>
 inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
                              hist_table<K, V>& ht) {
@@ -309,7 +337,7 @@ inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
 
   // sequential elision
   if (n < _hist_seq_threshold || nworkers == 1) {
-    size_t pn = parlay::log2_up((intT)(n + 1));
+    size_t pn = parlay::log2_up(n + 1);
     size_t rs = 1L << pn;
     ht.resize(rs);
     sequentialHT<K, V> S(ht.table.begin(), n, 1.0f, ht.empty);
@@ -400,11 +428,6 @@ inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
       alloc = parlay::sequence<MO>::uninitialized(num_heavy);
       heavy_cts = alloc.begin();
     }
-    //      for (size_t i=0; i<num_heavy; i++) {
-    //        heavy_cts[i] = std::nullopt;
-    //        std::cout << "cnt i = " << i << " = " <<
-    //        bkt_counts[(num_buckets+i)*S_STRIDE] << "\n";
-    //      }
   }
 
   // (2) process each bucket, compute the size of each HT and scan (seq)
@@ -425,13 +448,6 @@ inline sequence<O> histogram(A& get_key, size_t n, Apply& apply_f,
       max_size = size;
     }
   }
-
-  //    if (n > 100000) {
-  //      std::cout << "n = " << n << " min size = " << min_size << " max size =
-  //      " << max_size << " avg size = " << avg_size << "\n"; //" k = " << gb.k
-  //      <<
-  //      "\n";
-  //    }
 
   ht.resize(ht_offs[num_buckets]);
   KV* table = ht.table.begin();
@@ -612,7 +628,7 @@ inline sequence<O> histogram_reduce(A& get_elm, B& get_key, size_t n,
   // (1) count-sort based on bucket
   size_t low_mask = ~((size_t)15);
   size_t bucket_mask = num_buckets - 1;
-  auto gb = [&](uintE i) {
+  auto gb = [&](size_t i) {
     return parlay::hash32(get_key[i] & low_mask) & bucket_mask;
   };
 

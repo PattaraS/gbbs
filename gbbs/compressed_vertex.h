@@ -73,9 +73,9 @@ struct compressed_neighbors {
   }
 
   template <class F, class G>
-  inline void copy(uintT offset, F& f, G& g, bool parallel = true) {
+  inline void copy(size_t offset, F& f, G& g, bool parallel = true) {
     auto T = [&](const uintE& src, const uintE& target, const W& weight,
-                 const uintT& edgeNumber) {
+                 const size_t& edgeNumber) {
       auto val = f(src, target, weight);
       g(target, offset + edgeNumber, val);
       return true;

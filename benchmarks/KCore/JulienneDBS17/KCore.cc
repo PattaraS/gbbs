@@ -63,7 +63,9 @@ double KCore_runner(Graph& G, commandLine P) {
   // runs the fetch-and-add based implementation if set.
   timer t;
   t.start();
-  auto cores = (fa) ? KCore_FA(G, num_buckets) : KCore(G, num_buckets);
+  double base = P.getOptionDoubleValue("-base", 1.05);
+
+  auto cores = ApproxKCore(G, num_buckets, base);
   auto max_core = parlay::reduce_max(cores);
   using W = gbbs::empty;
   auto predicate = [&](const uintE& u, const uintE& v, const W& wgh) -> bool {

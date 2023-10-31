@@ -119,17 +119,17 @@ struct vertexSubsetData {
   }
 
   // Sparse
-  inline uintE& vtx(const uintE& i) { return std::get<0>(s[i]); }
-  inline data& vtxData(const uintE& i) { return std::get<1>(s[i]); }
-  inline std::tuple<uintE, data> vtxAndData(const uintE& i) const {
+  inline uintE& vtx(const size_t& i) { return std::get<0>(s[i]); }
+  inline data& vtxData(const size_t& i) { return std::get<1>(s[i]); }
+  inline std::tuple<uintE, data> vtxAndData(const size_t& i) const {
     return s[i];
   }
 
   // Dense
-  __attribute__((always_inline)) inline bool isIn(const uintE& v) const {
+  __attribute__((always_inline)) inline bool isIn(const size_t& v) const {
     return std::get<0>(d[v]);
   }
-  inline data& ithData(const uintE& v) { return std::get<1>(d[v]); }
+  inline data& ithData(const size_t& v) { return std::get<1>(d[v]); }
 
   // Returns (uintE) -> std::optional<std::tuple<vertex, vertex-data>>.
   auto get_fn_repr() const
@@ -289,17 +289,17 @@ struct vertexSubsetData<gbbs::empty> {
   }
 
   // Sparse
-  inline uintE& vtx(const uintE& i) { return s[i]; }
-  inline gbbs::empty vtxData(const uintE& i) { return gbbs::empty(); }
-  inline std::tuple<uintE, gbbs::empty> vtxAndData(const uintE& i) const {
+  inline uintE& vtx(const size_t& i) { return s[i]; }
+  inline gbbs::empty vtxData(const size_t& i) { return gbbs::empty(); }
+  inline std::tuple<uintE, gbbs::empty> vtxAndData(const size_t& i) const {
     return std::make_tuple(s[i], gbbs::empty());
   }
 
   // Dense
-  __attribute__((always_inline)) inline bool isIn(const uintE& v) const {
+  __attribute__((always_inline)) inline bool isIn(const size_t& v) const {
     return d[v];
   }
-  inline gbbs::empty ithData(const uintE& v) const { return gbbs::empty(); }
+  inline gbbs::empty ithData(const size_t& v) const { return gbbs::empty(); }
 
   // Returns (uintE) -> std::optional<std::tuple<vertex, vertex-data>>.
   auto get_fn_repr() const

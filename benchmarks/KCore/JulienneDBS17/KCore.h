@@ -23,13 +23,12 @@
 
 #pragma once
 
-#include <set>
 #include <queue>
+#include <set>
 #include <vector>
 
 #include "gbbs/gbbs.h"
 #include "gbbs/julienne.h"
-
 
 namespace gbbs {
 
@@ -37,10 +36,10 @@ template <class Graph>
 inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
   const size_t n = G.n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
+     n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
 
-  auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
-                                     (size_t)G.m / 50);
+  auto em =
+     hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0), (size_t)G.m / 50);
   auto b = make_vertex_buckets(n, D, increasing, num_buckets);
   timer bt;
 
@@ -55,20 +54,22 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
     k_max = std::max(k_max, bkt.id);
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
-        -> const std::optional<std::tuple<uintE, uintE> > {
-          uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
-          uintE deg = D[v];
-          if (deg > k) {
-            uintE new_deg = std::max(deg - edgesRemoved, k);
-            D[v] = new_deg;
-            return wrap(v, b.get_bucket(new_deg));
-          }
-          return std::nullopt;
-        };
+       -> const std::optional<std::tuple<uintE, uintE>> {
+      uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
+      uintE deg = D[v];
+      if (deg > k) {
+        uintE new_deg = std::max(deg - edgesRemoved, k);
+        D[v] = new_deg;
+        return wrap(v, b.get_bucket(new_deg));
+      }
+      return std::nullopt;
+    };
 
-    auto cond_f = [](const uintE& u) { return true; };
+    auto cond_f = [](const uintE& u) {
+      return true;
+    };
     vertexSubsetData<uintE> moved =
-        nghCount(G, active, cond_f, apply_f, em, no_dense);
+       nghCount(G, active, cond_f, apply_f, em, no_dense);
 
     bt.start();
     b.update_buckets(moved);
@@ -82,20 +83,23 @@ inline sequence<uintE> KCore(Graph& G, size_t num_buckets = 16) {
 
 template <class Graph>
 inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
-  double eps = 0.5, double delta = 0.5, bool use_pow = false) {
+                                        double eps = 0.5, double delta = 0.5,
+                                        bool use_pow = false) {
   const size_t n = G.n;
 
   auto Degrees =
-      sequence<std::pair<uintE, bool>>::from_function(n, [&](size_t i) {
-          return std::make_pair(G.get_vertex(i).out_degree(), false); });
+     sequence<std::pair<uintE, bool>>::from_function(n, [&](size_t i) {
+       return std::make_pair(G.get_vertex(i).out_degree(), false);
+     });
   double one_plus_delta = log(1 + delta);
   auto get_bucket = [&](size_t deg) -> uintE {
     return std::max(ceil(log(1 + deg) / one_plus_delta), 1.0);
   };
-  auto D = sequence<uintE>::from_function(G.n, [&] (size_t i) {
-    return get_bucket(Degrees[i].first); });
+  auto D = sequence<uintE>::from_function(
+     G.n, [&](size_t i) { return get_bucket(Degrees[i].first); });
 
-  auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0), (size_t)G.m / 50);
+  auto em =
+     hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0), (size_t)G.m / 50);
   auto b = make_vertex_buckets(n, D, increasing, num_buckets);
   timer bt;
 
@@ -121,25 +125,27 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
 
     // Check if we hit the threshold for inner peeling rounds.
     if (cur_inner_rounds == max_inner_rounds) {
-      // new re-insertions will go to at least bucket k (one greater than before).
+      // new re-insertions will go to at least bucket k (one greater than
+      // before).
       k++;
       cur_inner_rounds = 0;
     }
 
     // Mark peeled vertices as done.
-    parallel_for(0, active.size(), [&] (size_t i) {
+    parallel_for(0, active.size(), [&](size_t i) {
       uintE vtx = active.s[i];
-      assert(!Degrees[vtx].second);  // not yet peeled
-      Degrees[vtx].second = true;  // set to peeled
+      assert(!Degrees[vtx].second);   // not yet peeled
+      Degrees[vtx].second = true;     // set to peeled
     });
 
-    uintE lower_bound = ceil(pow((1 + delta), k-1));
+    uintE lower_bound = ceil(pow((1 + delta), k - 1));
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
-        -> const std::optional<std::tuple<uintE, uintE> > {
+       -> const std::optional<std::tuple<uintE, uintE>> {
       uintE v = std::get<0>(p), edges_removed = std::get<1>(p);
       if (!Degrees[v].second) {
         uintE deg = Degrees[v].first;
-        uintE new_deg = std::max(deg - std::min(edges_removed, deg), lower_bound);
+        uintE new_deg =
+           std::max(deg - std::min(edges_removed, deg), lower_bound);
         assert(new_deg >= 0);
         Degrees[v].first = new_deg;
         uintE new_bkt = std::max(get_bucket(new_deg), k);
@@ -152,7 +158,9 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
       return std::nullopt;
     };
 
-    auto cond_f = [] (const uintE& u) { return true; };
+    auto cond_f = [](const uintE& u) {
+      return true;
+    };
     vertexSubsetData<uintE> moved = nghCount(G, active, cond_f, apply_f, em);
 
     bt.start();
@@ -167,52 +175,45 @@ inline sequence<uintE> ApproximateKCore(Graph& G, size_t num_buckets = 16,
     cur_inner_rounds++;
   }
 
-  debug(bt.reportTotal("bucket time"););
+  //  debug(bt.reportTotal("bucket time"););
 
-  parallel_for(0, n, [&] (size_t i) {
-    if (use_pow) {  // use 2^{peeled_bkt} as the coreness estimate
+  parallel_for(0, n, [&](size_t i) {
+    if (use_pow) {   // use 2^{peeled_bkt} as the coreness estimate
       D[i] = (D[i] == 0) ? 0 : 1 << D[i];
     } else {
-      D[i] = Degrees[i].first;  // use capped induced degree when peeled as the coreness estimate
+      D[i] = Degrees[i].first;   // use capped induced degree when peeled as the
+                                 // coreness estimate
     }
   });
   return D;
 }
 
-
 template <class Graph>
-inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double approx_kcore_mult = 1.05) {
+inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16,
+                                   double approx_kcore_mult = 1.05) {
   const size_t n = G.n;
 
   // D represents the actual degree
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) {
-        return G.get_vertex(i).out_degree();
-      });
+     n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
 
   auto bucketer = [approx_kcore_mult](uintE i) {
-    if (i == 0) return uintE(0);
-    return uintE( 1 + floor(log(i) / log(approx_kcore_mult)) ) ;
-      //(uintE) floor(pow(
-            //approx_kcore_mult,
-            //floor(log(i)/log(approx_kcore_mult))
-            //));
-  };
-
-  auto bucket_to_deg = [approx_kcore_mult](uintE bkt_id) {
-    if (bkt_id == 0) return uintE(0);
-    return  uintE(floor(pow(approx_kcore_mult, bkt_id -1)));
+    if (i == 0) {
+      return uintE(0);
+    }
+    return uintE(1 + floor(log(i) / log(approx_kcore_mult)));
   };
 
   auto bucket_map = sequence<uintE>::from_function(
-    n, [&](size_t i) {
-        return bucketer(D[i]);
-  });
+     n, [&](size_t i) { return bucketer(D[i]); });
 
-  auto em = hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, 0),
-                                     (size_t)G.m / 50);
+
   auto b = make_vertex_buckets(n, bucket_map, increasing, num_buckets);
+  auto null_bkt = b.null_bkt;
   timer bt;
+
+  auto em =
+     hist_table<uintE, uintE>(std::make_tuple(UINT_E_MAX, null_bkt), (size_t)G.m/20);
 
   size_t finished = 0, rho = 0, k_max = 0;
   while (finished != n) {
@@ -222,56 +223,53 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
 
     uintE k = bkt.id;
 
-    //parallel_for(0, bkt.identifiers.size(), [&](size_t i) {
-        //D[bkt.identifiers[i]] = k;
-    //});
-
     auto active = vertexSubset(n, std::move(bkt.identifiers));
 
     finished += active.size();
 
-    std::cout <<"bucket id : " << bkt.id << " finished: " << finished << "/" << n << std::endl;
-
+    std::cout << "bucket id : " << bkt.id << " finished: " << finished << "/"
+              << n << std::endl;
 
     k_max = std::max(k_max, bkt.id);
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
-        -> const std::optional<std::tuple<uintE, uintE> > {
-          uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
-          uintE v_bucket = bucket_map[v];
+       -> const std::optional<std::tuple<uintE, uintE>> {
+      uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
+      uintE v_bucket = bucket_map[v];
 
-          if (v_bucket > k) {
-            uintE new_deg = 0;
-            if (D[v] >= edgesRemoved) {
-              new_deg = D[v] - edgesRemoved;
-            } else {
-              //std::stringstream ss;
-              //ss << "REMOVE MORE THAN DEGREE FOR: " << v << " " << D[v] << " " << edgesRemoved << "\n";
-              //std::string s = ss.str();
-              //std::cout << s;
-              //D[v] = k;
-              D[v] = 0;
-              bucket_map[v] = k;
-              return wrap(v, b.get_bucket(k));
-              //return std::nullopt;
-            }
-              
-            uintE new_bkt = std::max(k, bucketer(new_deg));
-            D[v] = new_deg;
-            bucket_map[v] = new_bkt;
-            if (new_bkt != v_bucket) {
-              return wrap(v, b.get_bucket(new_bkt));
-            }
-          }
-          return std::nullopt;
-        };
+      if (v_bucket > k) {
+        uintE new_deg = 0;
+        if (D[v] >= edgesRemoved) {
+          new_deg = D[v] - edgesRemoved;
+        } else {
+          std::stringstream ss;
+          ss << "REMOVE MORE THAN DEGREE FOR: " << v << " " << D[v] << " " <<
+          edgesRemoved << "\n"; std::string s = ss.str(); std::cout << s;
+          assert(false);
+          // D[v] = k;
+          D[v] = 0;
+          bucket_map[v] = k;
+          return wrap(v, b.get_bucket(k));
+        }
 
-    auto cond_f = [](const uintE& u) { return true; };
-    vertexSubsetData<uintE> moved ;
-    //if (active.size() < 100) {
-     //moved = nghCount(G, active, cond_f, apply_f, em, no_dense);
+        uintE new_bkt = std::max(k, bucketer(new_deg));
+        D[v] = new_deg;
+        bucket_map[v] = new_bkt;
+        if (new_bkt != v_bucket) {
+          return wrap(v, b.get_bucket(new_bkt));
+        }
+      }
+      return std::nullopt;
+    };
+
+    auto cond_f = [](const uintE& u) {
+      return true;
+    };
+    vertexSubsetData<uintE> moved;
+    // if (active.size() < 100) {
+    // moved = nghCount(G, active, cond_f, apply_f, em, no_dense);
     //} else {
-     moved = nghCount(G, active, cond_f, apply_f, em);
+    moved = nghCount(G, active, cond_f, apply_f, em);
     //}
 
     bt.start();
@@ -282,7 +280,13 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16, double app
   std::cout << "### rho = " << rho << " k_{max} = " << k_max << "\n";
   debug(bt.next("bucket time"););
 
-  return parlay::map( bucket_map, bucket_to_deg );
+  auto bucket_to_deg = [approx_kcore_mult](uintE bkt_id) {
+    if (bkt_id == 0)
+      return uintE(0);
+    return uintE(floor(pow(approx_kcore_mult, bkt_id - 1)));
+  };
+
+  return parlay::map(bucket_map, bucket_to_deg);
 }
 
 template <class W>
@@ -314,7 +318,7 @@ inline sequence<uintE> KCore_FA(Graph& G, size_t num_buckets = 16) {
   using W = typename Graph::weight_type;
   const size_t n = G.n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
+     n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
   auto ER = sequence<uintE>::from_function(n, [&](size_t i) { return 0; });
 
   auto b = make_vertex_buckets(n, D, increasing, num_buckets);
@@ -339,7 +343,7 @@ inline sequence<uintE> KCore_FA(Graph& G, size_t num_buckets = 16) {
     };
 
     auto moved = edgeMapData<uintE>(
-        G, active, kcore_fetch_add<W>(ER.begin(), D.begin(), k));
+       G, active, kcore_fetch_add<W>(ER.begin(), D.begin(), k));
     vertexMap(moved, apply_f);
 
     if (moved.dense()) {
@@ -357,10 +361,10 @@ template <class Graph>
 inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
   const size_t n = G.n;
   auto D = sequence<uintE>::from_function(
-      n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
+     n, [&](size_t i) { return G.get_vertex(i).out_degree(); });
 
-  auto em = EdgeMap<uintE, Graph>(G, std::make_tuple(UINT_E_MAX, 0),
-                                  (size_t)G.m / 50);
+  auto em =
+     EdgeMap<uintE, Graph>(G, std::make_tuple(UINT_E_MAX, 0), (size_t)G.m / 50);
   auto b = make_vertex_buckets(n, D, increasing, num_buckets);
   timer bt;
 
@@ -376,25 +380,25 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
     finished += active.size();
     k_max = std::max(k_max, bkt.id);
 
-    //std::cout << "generating order" << finished << std::endl;
+    // std::cout << "generating order" << finished << std::endl;
     auto active_seq = parlay::delayed_seq<uintE>(
-        active.size(), [&](uintE i) { return active.s[i]; });
+       active.size(), [&](uintE i) { return active.s[i]; });
     degeneracy_order.copyIn(active_seq, active.size());
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
-        -> const std::optional<std::tuple<uintE, uintE> > {
-          uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
-          uintE deg = D[v];
-          if (deg > k) {
-            uintE new_deg = std::max(deg - edgesRemoved, k);
-            D[v] = new_deg;
-            return wrap(v, b.get_bucket(new_deg));
-          }
-          return std::nullopt;
-        };
+       -> const std::optional<std::tuple<uintE, uintE>> {
+      uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
+      uintE deg = D[v];
+      if (deg > k) {
+        uintE new_deg = std::max(deg - edgesRemoved, k);
+        D[v] = new_deg;
+        return wrap(v, b.get_bucket(new_deg));
+      }
+      return std::nullopt;
+    };
 
     vertexSubsetData<uintE> moved =
-        em.template edgeMapCount_sparse<uintE>(active, apply_f);
+       em.template edgeMapCount_sparse<uintE>(active, apply_f);
     bt.start();
     if (moved.dense()) {
       b.update_buckets(moved.get_fn_repr(), n);
@@ -411,58 +415,64 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrder(Graph& G, size_t num_buckets = 16) {
 }
 
 template <class Graph>
-inline sequence<uintE> SeqDegeneracyOrderWithLoad(Graph& G, sequence<std::pair<uintE, uintE>> D) {
-    auto degeneracy_order = sequence<uintE>(D.size());
-    auto finished = 0;
-    using pi = std::pair<uintE, uintE>;
-    using W = typename Graph::weight_type;
-    std::priority_queue<pi, std::vector<pi>, std::greater<pi>> pq;
-    std::set<uintE> verts;
+inline sequence<uintE> SeqDegeneracyOrderWithLoad(
+   Graph& G, sequence<std::pair<uintE, uintE>> D) {
+  auto degeneracy_order = sequence<uintE>(D.size());
+  auto finished = 0;
+  using pi = std::pair<uintE, uintE>;
+  using W = typename Graph::weight_type;
+  std::priority_queue<pi, std::vector<pi>, std::greater<pi>> pq;
+  std::set<uintE> verts;
 
-    for (size_t i = 0; i < D.size(); i++) {
-        pq.push(std::make_pair(D[i].second, D[i].first));
-    }
+  for (size_t i = 0; i < D.size(); i++) {
+    pq.push(std::make_pair(D[i].second, D[i].first));
+  }
 
-    while (finished < D.size()) {
-        auto vert_pair = pq.top();
-        pq.pop();
+  while (finished < D.size()) {
+    auto vert_pair = pq.top();
+    pq.pop();
 
-        if (verts.find(vert_pair.second) == verts.end()) {
-            verts.insert(vert_pair.second);
-            degeneracy_order[finished] = vert_pair.second;
-            auto moved = sequence<std::pair<uintE, uintE>>(G.get_vertex(vert_pair.second).out_degree());
-            auto map_f = [&](const uintE& u, const uintE& v, const W& wgh, const uintE& nghind) {
-                if (verts.find(v) == verts.end()) {
-                    D[v].second -= 1;
-                }
-                moved[nghind] = std::make_pair(v, D[v].second);
-            };
-            G.get_vertex(vert_pair.second).out_neighbors().map_with_index(map_f, false);
-
-            for (int j = 0; j < moved.size(); j++) {
-                pq.push(std::make_pair(moved[j].second, moved[j].first));
-            }
-            finished++;
+    if (verts.find(vert_pair.second) == verts.end()) {
+      verts.insert(vert_pair.second);
+      degeneracy_order[finished] = vert_pair.second;
+      auto moved = sequence<std::pair<uintE, uintE>>(
+         G.get_vertex(vert_pair.second).out_degree());
+      auto map_f = [&](const uintE& u, const uintE& v, const W& wgh,
+                       const uintE& nghind) {
+        if (verts.find(v) == verts.end()) {
+          D[v].second -= 1;
         }
+        moved[nghind] = std::make_pair(v, D[v].second);
+      };
+      G.get_vertex(vert_pair.second)
+         .out_neighbors()
+         .map_with_index(map_f, false);
+
+      for (int j = 0; j < moved.size(); j++) {
+        pq.push(std::make_pair(moved[j].second, moved[j].first));
+      }
+      finished++;
     }
+  }
 
-    std::set<uintE> new_verts;
+  std::set<uintE> new_verts;
 
-    for (size_t i = 0; i < degeneracy_order.size(); i++) {
-        new_verts.insert(degeneracy_order[i]);
-    }
+  for (size_t i = 0; i < degeneracy_order.size(); i++) {
+    new_verts.insert(degeneracy_order[i]);
+  }
 
-    return degeneracy_order;
+  return degeneracy_order;
 }
 
 template <class Graph>
-inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
-        size_t num_buckets = 16, parlay::random& rnd = parlay::random()) {
+inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(
+   Graph& G, sequence<uintE> D, size_t num_buckets = 16,
+   parlay::random& rnd = parlay::random()) {
 
   const size_t n = G.n;
 
-  auto em = EdgeMap<uintE, Graph>(G, std::make_tuple(UINT_E_MAX, 0),
-                                  (size_t)G.m / 50);
+  auto em =
+     EdgeMap<uintE, Graph>(G, std::make_tuple(UINT_E_MAX, 0), (size_t)G.m / 50);
   auto b = make_vertex_buckets(n, D, increasing, num_buckets);
   timer bt;
 
@@ -479,40 +489,40 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
     k_max = std::max(k_max, bkt.id);
 
     auto active_seq = parlay::delayed_seq<uintE>(
-        active.size(), [&](size_t i) { return active.s[i]; });
+       active.size(), [&](size_t i) { return active.s[i]; });
     degeneracy_order.copyIn(active_seq, active_seq.size());
 
-    //auto shifting = rand() % active.size();;
-    //auto active_rotate = parlay::rotate(active_seq, shifting);
-    //auto active_shuffle = parlay::random_shuffle(active_seq, rnd);
-    //rnd = rnd.next();
+    // auto shifting = rand() % active.size();;
+    // auto active_rotate = parlay::rotate(active_seq, shifting);
+    // auto active_shuffle = parlay::random_shuffle(active_seq, rnd);
+    // rnd = rnd.next();
 
     /*for (size_t i = 0; i < active_shuffle.size(); i++) {
         std::cout << "Bucket element: " << active_shuffle[i] << std::endl;
     }*/
-    //std::cout << "active size() = " << active.size() << std::endl;
-    //std::cout << "active_shuffle size() = " << active_shuffle.size() << std::endl;
-    //degeneracy_order.copyIn(active_shuffle, active_shuffle.size());
+    // std::cout << "active size() = " << active.size() << std::endl;
+    // std::cout << "active_shuffle size() = " << active_shuffle.size() <<
+    // std::endl; degeneracy_order.copyIn(active_shuffle,
+    // active_shuffle.size());
 
-    //degeneracy_order.copyIn(active_rotate, active.size());
+    // degeneracy_order.copyIn(active_rotate, active.size());
 
     auto apply_f = [&](const std::tuple<uintE, uintE>& p)
-        -> const std::optional<std::tuple<uintE, uintE> > {
-          uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
-          uintE deg = D[v];
-          if (deg > k) {
-            // store actual degree for densest subgraph # and peeling degree
-            uintE new_deg =
-                std::max(k, deg-edgesRemoved);
-            //uintE original = std::max(deg - edgesRemoved, k);
-            D[v] = new_deg;
-            return wrap(v, b.get_bucket(new_deg));
-          }
-          return std::nullopt;
-        };
+       -> const std::optional<std::tuple<uintE, uintE>> {
+      uintE v = std::get<0>(p), edgesRemoved = std::get<1>(p);
+      uintE deg = D[v];
+      if (deg > k) {
+        // store actual degree for densest subgraph # and peeling degree
+        uintE new_deg = std::max(k, deg - edgesRemoved);
+        // uintE original = std::max(deg - edgesRemoved, k);
+        D[v] = new_deg;
+        return wrap(v, b.get_bucket(new_deg));
+      }
+      return std::nullopt;
+    };
 
     vertexSubsetData<uintE> moved =
-        em.template edgeMapCount_sparse<uintE>(active, apply_f);
+       em.template edgeMapCount_sparse<uintE>(active, apply_f);
 
     bt.start();
     if (moved.dense()) {
@@ -528,4 +538,4 @@ inline gbbs::dyn_arr<uintE> DegeneracyOrderWithLoad(Graph& G, sequence<uintE> D,
   debug(bt.next("bucket time"););
   return degeneracy_order;
 }
-}  // namespace gbbs
+}   // namespace gbbs
