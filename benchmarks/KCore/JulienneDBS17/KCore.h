@@ -227,8 +227,8 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16,
 
     finished += active.size();
 
-    std::cout << "bucket id : " << bkt.id << " finished: " << finished << "/"
-              << n << std::endl;
+    //std::cout << "bucket id : " << bkt.id << " finished: " << finished << "/"
+              //<< n << std::endl;
 
     k_max = std::max(k_max, bkt.id);
 
@@ -266,11 +266,7 @@ inline sequence<uintE> ApproxKCore(Graph& G, size_t num_buckets = 16,
       return true;
     };
     vertexSubsetData<uintE> moved;
-    // if (active.size() < 100) {
-    // moved = nghCount(G, active, cond_f, apply_f, em, no_dense);
-    //} else {
-    moved = nghCount(G, active, cond_f, apply_f, em);
-    //}
+    moved = nghCount(G, active, cond_f, apply_f, em, no_dense);
 
     bt.start();
     b.update_buckets(moved);
